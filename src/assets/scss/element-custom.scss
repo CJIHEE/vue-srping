@@ -1,0 +1,22 @@
+/* Button*/
+.el-button {
+  font-weight: 400;
+}
+
+/* Table */
+.el-table th {
+  border-top: 1px solid #d8d8da;
+  background: #f5f5f5;
+  & > .cell {
+    font-weight: 400;
+  }
+}
+
+/* scrollbar */
+.el-scrollbar {
+  height: 100%;
+  .el-scrollbar__wrap {
+    overflow: hidden;
+    overflow-y: scroll;
+  }
+}
