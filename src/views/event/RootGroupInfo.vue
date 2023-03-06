@@ -5,25 +5,49 @@
         </div>
        
         <div>
-            차트
+            <chart :id="id"></chart>
         </div>
-        <el-select v-model="value" filterable placeholder="전체">
-            <el-option
-              v-for="item in eventGrade"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value">
-            </el-option>
-          </el-select>
+
+        <div class="parent">
+            <div class="child">
+                <el-select
+                 v-model="value" 
+                 filterable 
+                 placeholder="전체">
+                    <el-option
+                    v-for="item in eventGrade"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                    </el-option>
+                </el-select>
+            </div>
+            <div style="float: right;">
+                <el-input
+                    placeholder="검색"
+                    v-model="searchWord"
+                    @change="getEventList">
+                    <i slot="prefix" class="el-input__icon el-icon-search"></i>
+                </el-input>
+            </div>
+        </div>
         <div>
             <el-table
                 :data="tableData"
                 border
                 style="width: 100%">
                 <el-table-column
-                prop="eventlevel_name"
                 label="등급"
                 width="180">
+                <!-- prop="eventlevel_name" -->
+                    <template slot-scope="scope">
+                        <el-tag
+                         :style="styleBinding(scope.row.eventlevel_name)"
+                         disable-transitions
+                        >
+                        {{scope.row.eventlevel_name}}
+                        </el-tag>
+                    </template>
                 </el-table-column>
                 <el-table-column
                 prop="obj_name"
@@ -43,12 +67,20 @@
                 label="자원">
                 </el-table-column>
                 <el-table-column
-                prop="event_message"
                 label="장애 메시지">
+                <template slot-scope="scope">
+                    <el-tag 
+                    @click="eventDetail(scope.row.rno), drawer = true"
+                    style="cursor: pointer"
+                    >
+                    {{scope.row.event_message}}
+                    </el-tag>
+                </template>
                 </el-table-column>
                 <el-table-column
                 prop="check_datetime"
-                label="발생 시각">
+                label="발생 시각"
+                >
                 </el-table-column>
             </el-table>
             <div class="block">
@@ -61,24 +93,77 @@
                     layout="total, sizes, prev, pager, next, jumper"
                     :total="totalPage">
                     </el-pagination>
-                </div>
+            </div>
         </div>
+
+        <el-drawer v-model="drawer" title="이벤트 성능 정보"  :visible.sync="drawer" size="50%" >
+            <div  
+            v-for="(item,idx) in eventCardDetail" 
+            :key="idx"
+            >
+                <el-row :gutter="24" style="margin: auto;">
+                <el-col 
+                    :span="20"
+                    shadow="always" 
+                    style="margin: auto;">
+                    <el-card style="margin: auto;">
+                        <div class="parent">
+                            <span style="margin-bottom: 10px;"><sapn class="span-style"> · 장비명 </sapn>{{ item.obj_name }}</span>
+                        </div>
+                        <div class="parent">   
+                            <span><sapn class="span-style"> · 장애 메시지 </sapn>{{item.event_message}}</span>
+                        </div>
+
+                    </el-card>
+                </el-col>
+            </el-row>
+            </div>
+        </el-drawer>
+
     </div>
 </template>
 
 <script>
 import card from './components/card.vue'
 import device from './components/device.vue'
+import chart from './components/chart.vue'
 
-export default{
+export default{ 
     name : 'RootGroupInfo',
-    components : {card , device},
+    components : {card , device, chart},
     computed : {
         id : function(){
             return  this.$route.params.id
         },
         name : function(){
             return  this.$route.params.name
+        },
+          styleBinding(){
+            return (eventlevel_name) => {
+                if(eventlevel_name == 'Nomal') {
+                    this.bgColor = 'purple'
+                    this.fontColor = 'white'
+                }
+                else if(eventlevel_name == 'Down'){
+                    this.bgColor = 'gray'
+                    this.fontColor = 'white'
+                }
+                else if(eventlevel_name == 'Minor'){
+                    this.bgColor = 'orange'
+                    this.fontColor = 'white'
+                }
+                else if(eventlevel_name == 'Major'){
+                    this.bgColor = 'yellow'
+                    this.fontColor = 'black'
+                }
+                else {
+                    this.bgColor = 'red'
+                    this.fontColor = 'white'
+                }
+    	    return { backgroundColor : this.bgColor , color : this.fontColor}
+    };
+            
+
         }
     },
     watch: {
@@ -89,6 +174,9 @@ export default{
             this.value='';
             this.getEventList();
         },
+        value(){
+            this.getEventList();
+        }
     },
     data() {
         return {
@@ -99,6 +187,8 @@ export default{
             sizePerPage: 25,
             totalPage : 0,
             value : '',
+            searchWord : '',  
+            chartData : [1,2,3,4]  ,
             eventGrade : [{
                 value : 'Critical',
                 label : 'Critical',
@@ -118,12 +208,16 @@ export default{
                 }, {
                 value : 'Normal',
                 label : 'Normal',
-                }],
+                }],   
+            bgColor : '',   
+            fontColor : 'white', 
+            drawer : false,
+            eventCardDetail : [],
         }
+
     },
     mounted() {
         this.changeComponent();
-        this.getEventList();
     },
     methods: {
         changeComponent(){
@@ -143,10 +237,15 @@ export default{
             this.getEventList();
         },
         getEventList(){
-            console.log()
-            this.$axios.get('app/event/get-event-list.do', { params: { id: this.id , currentPage:this.currentPage, sizePerPage:this.sizePerPage} })
+            this.$axios.get('app/event/get-event-list.do', { params: { 
+                                                                        id: this.id , 
+                                                                        currentPage:this.currentPage, 
+                                                                        sizePerPage:this.sizePerPage, 
+                                                                        value:this.value, 
+                                                                        searchWord:this.searchWord
+                                                                    }})
             .then(response => {
-            console.log(response.data.data)
+            //console.log(response.data.data)
             this.tableData = response.data.data;
             this.totalPage = response.data.total;
             // this.eventGrade = response.data.data2;
@@ -156,7 +255,26 @@ export default{
               console.log(ex);
             })
         }, 
+        eventDetail(index){
+            console.log("index : " + index);
+
+            this.$axios.get('app/event/get-card-detail.do', { params: { 
+                                                                        index: index,
+                                                                        id: this.id , 
+                                                                        value:this.value, 
+                                                                        searchWord:this.searchWord}})
+            .then(response => {
+                //console.log(response.data.data)
+                this.eventCardDetail = response.data.data
+            })
+            .catch((ex) => {
+                console.log(ex);
+            })
+        
+        },
+
     },
+    
     
 
 }
@@ -165,6 +283,16 @@ export default{
 <style scoped>
 .title {
     margin-bottom: 15px;
+}
+.parent{
+    display : flex;
+}
+.child {
+    flex: 0.5;
+}
+.span-style {
+    font-weight: bold;
+    margin-right: 10px;
 }
 
 </style>

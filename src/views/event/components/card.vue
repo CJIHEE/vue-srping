@@ -42,10 +42,10 @@ export default {
     },
     methods : {
         getCardData(){
-            console.log("실행")
+            console.log("id: " + this.id)
             this.$axios.get('app/event/get-card.do', { params: { id: this.id } })
             .then(response => {
-            console.log(response.data.data)
+            //console.log(response.data.data)
             this.cardList = response.data.data
             })
             .catch((ex) => {

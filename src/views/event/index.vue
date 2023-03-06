@@ -72,7 +72,6 @@
       },
       changeRouter(treeKey,treename){
       this.treeKey = treeKey;
-      console.log(isNaN(treeKey));
       this.$router.push({name:'RootGroupInfo',params:{id:treeKey , name:treename}});
     }
     },

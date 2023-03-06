@@ -17,7 +17,6 @@
                             <span style="margin-bottom: 10px;"><sapn class="span-style"> · 장비명</sapn>{{item.obj_name}}</span>
                             <span><sapn class="span-style"> · 장비 구분</sapn>{{item.obj_define_name}}</span>
                             <span><sapn class="span-style"> · 제조사</sapn>{{item.obj_company_name}}</span>
-                            
                         </div>
                         <div class="parent">   
                             <span><sapn class="span-style"> · IP</sapn>{{item.ipaddress_ipv4}}</span>
@@ -55,7 +54,7 @@ export default {
         getDeviceData(){
             this.$axios.get('app/event/get-card.do', { params: { id: this.id} })
             .then(response => {
-                console.log(response.data.data)
+                //console.log(response.data.data)
 
                 this.deviceData = response.data.data
             })

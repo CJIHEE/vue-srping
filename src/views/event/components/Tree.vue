@@ -16,7 +16,6 @@
 </template>
 
 <script>
-import { emit } from 'process';
 
 export default {
     name : 'treeData',
