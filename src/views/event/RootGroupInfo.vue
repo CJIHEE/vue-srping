@@ -113,8 +113,10 @@
                         <div class="parent">   
                             <span><sapn class="span-style"> · 장애 메시지 </sapn>{{item.event_message}}</span>
                         </div>
-
                     </el-card>
+                    <div>
+                        <chartDetail :deviceDetailName="deviceDetailName"></chartDetail>
+                    </div>
                 </el-col>
             </el-row>
             </div>
@@ -127,10 +129,11 @@
 import card from './components/card.vue'
 import device from './components/device.vue'
 import chart from './components/chart.vue'
+import chartDetail from './components/chartDetail.vue'
 
 export default{ 
     name : 'RootGroupInfo',
-    components : {card , device, chart},
+    components : {card , device, chart ,chartDetail},
     computed : {
         id : function(){
             return  this.$route.params.id
@@ -140,7 +143,7 @@ export default{
         },
           styleBinding(){
             return (eventlevel_name) => {
-                if(eventlevel_name == 'Nomal') {
+                if(eventlevel_name == 'Normal') {
                     this.bgColor = 'purple'
                     this.fontColor = 'white'
                 }
@@ -161,9 +164,7 @@ export default{
                     this.fontColor = 'white'
                 }
     	    return { backgroundColor : this.bgColor , color : this.fontColor}
-    };
-            
-
+            };   
         }
     },
     watch: {
@@ -213,11 +214,13 @@ export default{
             fontColor : 'white', 
             drawer : false,
             eventCardDetail : [],
+            deviceDetailName : '',
         }
 
     },
     mounted() {
         this.changeComponent();
+        this.getEventList();
     },
     methods: {
         changeComponent(){
@@ -266,6 +269,7 @@ export default{
             .then(response => {
                 //console.log(response.data.data)
                 this.eventCardDetail = response.data.data
+                this.deviceDetailName = response.data.data[0].obj_name;
             })
             .catch((ex) => {
                 console.log(ex);

@@ -1,0 +1,226 @@
+<template>
+    <div >
+        그룹 목록 
+        <el-button
+        @click="dialogFormVisible = true"
+        >
+            추가
+        </el-button>
+
+        <el-button
+        @click="deleteGrop">
+            삭제
+        </el-button>
+        <div>
+            <el-table
+            :data="tableData"
+            border
+            style="width: 80%; margin-top: 20px;"
+            @selection-change="handleSelectionChange">
+            <el-table-column
+            type="selection"
+            >
+                </el-table-column>
+                <el-table-column
+                prop="managegroup_id"
+                label="그룹번호"
+                >
+                </el-table-column>
+                <el-table-column
+                prop="managegroup_name"
+                label="그룹명"
+                >
+                </el-table-column>
+                <el-table-column
+                prop="orderby_index"
+                label="정렬순서"
+                >
+                </el-table-column>
+            </el-table>
+        </div>
+        
+        <div>
+             
+<el-dialog title="그룹 추가" :visible.sync="dialogFormVisible">
+    <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px" class="demo-ruleForm">
+        <el-form-item label="이름" prop="groupName" :label-width="formLabelWidth">
+        <el-input v-model="ruleForm.groupName" autocomplete="off"></el-input>
+        </el-form-item>
+
+    <el-form-item label="정렬순서" :label-width="formLabelWidth">
+        <el-input-number 
+        v-model="num" controls-position="right" 
+        @change="handleChange" 
+        :min="this.orderIndex" 
+        >
+        </el-input-number>
+    </el-form-item>
+  </el-form>
+  <span slot="footer" class="dialog-footer">
+    <el-button type="primary" @click=" addGroup('ruleForm')">저장</el-button>
+    <el-button @click="cancle">취소</el-button>
+  </span>
+</el-dialog>
+        </div>  
+        
+
+    </div>
+</template>
+
+<script>
+    export default {
+        name : 'GroupSetting',
+        data() {
+            var checkGroupName = (rule, value, callback) => {
+                if (value === '') {
+                callback(new Error('그룹 이름을 입력해 주세요.'));
+                }else {
+                    let flag = false
+                    for (var i = 0; i < this.groupNameList .length; i++) {
+                        if(value === this.groupNameList[i]){flag = true }
+                    } 
+                    if(flag){
+                        callback(new Error('이미 있는 그룹명입니다. 다른 이름을 입력해 주세요.'));
+                    }
+                    callback();
+                }
+            };
+            return {
+                tableData :[],
+                groupNameList : [],
+                multipleSelection: [],
+                array : [],
+                selectArray :[],
+                dialogFormVisible: false,
+                num : '',
+                orderIndex: '',
+                ruleForm:{
+                        groupName:'',
+                    },
+                rules : {
+                    groupName :[
+                    {validator: checkGroupName, required:true, trigger:'blur'},
+                    ]
+                },
+                checkRuleForm : false,
+                formLabelWidth: '120px'    
+                
+            }
+        },
+        watch:{
+            orderIndex(){
+                this.num = this.orderIndex
+            }
+        },
+        created() {
+            this.getTableData();
+        },
+        methods: {
+            //그룹 조회
+            getTableData(){
+                this.$axios.get('app/event/get-group.do')
+                .then(response => {
+                    console.log(response.data.data)
+                    this.tableData = response.data.data
+                    //그룹 아이디 추출
+                    for (var i = 0; i < this.tableData.length; i++) {
+                            this.groupNameList.push(this.tableData[i].managegroup_name)
+                    } 
+                    //정렬순서 최대값
+                    const indexArray = [];
+                    for (var i = 0; i < this.tableData.length; i++) {
+                            indexArray.push(this.tableData[i].orderby_index)
+                    } 
+                    this.orderIndex = Math.max.apply(null, indexArray)+1;
+                })
+                .catch((ex) => {
+                    console.log(ex);
+                })
+                this.resetData();
+                },
+            handleSelectionChange(val){
+                this.multipleSelection = val;
+            },
+            //그룹 추가
+            addGroup(formName){
+                //유효성 검사
+                this.checkRule(formName);
+                this.checkRuleForm == true?this.dialogFormVisible=false:this.dialogFormVisible=true
+                //유효성 검사 통과시 데이터 추가
+                if(this.checkRuleForm){
+                    this.$axios.get('app/event/add-group.do',{ params: {  managegroup_name : this.ruleForm.groupName, 
+                                                                           orderby_index: this.orderIndex 
+                                                                        }})
+                    .then(response => {
+                        console.log(response.data)
+                    })
+                    .catch((ex) => {
+                        console.log(ex);
+                    })
+                    this.$message('그룹을 추가하였습니다');
+                    this.getTableData();
+                }
+                else{
+                    this.$message.error('오류가 발생하였습니다.');
+                }
+                
+                this.resetData();
+                
+            },
+            handleChange(value){
+                //this.orderIndex = value;
+            },
+            //삭제
+            deleteGrop(){
+                //시퀀스 번호 배열에 담기
+                for (var i = 0; i < this.multipleSelection.length; i++) {
+                    if(this.array)
+                    this.array.push(this.multipleSelection[i].managegroup_id)
+                } 
+                //배열 중복제거 
+                this.selectArray = this.array.filter((v, i) => this.array.indexOf(v) === i).join(",");
+                //배열보내기
+                this.$axios.get('app/event/delete-group.do',{ params: {  selectArray:this.selectArray }})
+                .then(response => {
+                    console.log(response.data.data)
+                })
+                .catch((ex) => {
+                console.log(ex);
+                })
+                //배열초기화
+                this.array = [];
+                this.selectArray =[];
+                this.resetData();
+                this.getTableData();
+            },
+            //유효성 검사
+            checkRule(formName){
+                this.$refs[formName].validate((valid) => {
+                if (valid) {
+                    this.checkRuleForm = true;
+                //this.printMessage();
+                } else {
+                    this.checkRuleForm = false;
+                    return false;
+                }
+                });
+            },
+            //취소
+            cancle(){
+                this.resetData();
+                this.dialogFormVisible = false;
+            },
+            //데이터 초기화
+            resetData(){
+                this.ruleForm.groupName = '';
+                this.groupNameList =[];
+                this.num = this.orderIndex;
+            }
+        },
+
+    }
+    </script>
+    
+<style scoped>
+
+</style>

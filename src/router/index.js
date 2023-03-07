@@ -29,6 +29,19 @@ const routes = [
       },
     ]
   },
+  {
+    path: '/setting',
+    name: 'setting',
+    component:event,
+    children : [
+      {
+        path: ':id',
+        name: 'RootGroupInfo',
+        component:RootGroupInfo,
+        props:true
+      },
+    ]
+  },
 
 
 ];

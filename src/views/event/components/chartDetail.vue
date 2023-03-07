@@ -32,7 +32,7 @@
 
 export default{
     name : 'charList',
-    props : ['id'],
+    props : ['deviceDetailName'],
     //props 데이터 변경 감지
     watch :{
         id(){
@@ -56,14 +56,13 @@ export default{
             chartList:[],
             chartList2:[1,23,4,5,6,],
             categorytyList:[],
-            chartTitle: '이벤트 이력',
             chartOptions : {
 
                 chart: {
                     zoomType: 'x'
                 },
                 title: {
-                    text: '이벤트 이력',
+                    text: '성능 추이',
                     align: 'left'
                 },
                 xAxis:{
@@ -93,7 +92,7 @@ export default{
     methods: {
 
         getCharList(){
-            this.$axios.get('app/event/get-chart-data.do', { params: { id: this.id , value : this.value2 , value2: this.value3 }})
+            this.$axios.get('app/event/get-chart-detail.do', { params: { id: this.deviceDetailName , value : this.value2 , value2: this.value3 }})
             .then(response => {
             this.chartList = response.data.data.chartList
             this.categorytyList = response.data.data.categorytyList

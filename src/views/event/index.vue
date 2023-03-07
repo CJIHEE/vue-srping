@@ -36,6 +36,9 @@
       Tree,
       RootGroupInfo
     },
+    created() {
+      this.$router.push({name:'RootGroupInfo',params:{id:'root' , name:'root'}});
+    },
     watch: {
       filterText(val) {
         this.$refs.tree.filter(val);
