@@ -108,10 +108,10 @@
                     style="margin: auto;">
                     <el-card style="margin: auto;">
                         <div class="parent">
-                            <span style="margin-bottom: 10px;"><sapn class="span-style"> · 장비명 </sapn>{{ item.obj_name }}</span>
+                            <span style="margin-bottom: 10px;"><span class="span-style"> · 장비명 </span>{{ item.obj_name }}</span>
                         </div>
                         <div class="parent">   
-                            <span><sapn class="span-style"> · 장애 메시지 </sapn>{{item.event_message}}</span>
+                            <span><span class="span-style"> · 장애 메시지 </span>{{item.event_message}}</span>
                         </div>
                     </el-card>
                     <div>
@@ -142,28 +142,30 @@ export default{
             return  this.$route.params.name
         },
           styleBinding(){
-            return (eventlevel_name) => {
+            return (eventlevel_name) => {   
+                let bgColor ='';
+                let fontColor='white';
                 if(eventlevel_name == 'Normal') {
-                    this.bgColor = 'purple'
-                    this.fontColor = 'white'
+                    bgColor = 'purple'
+                    fontColor = 'white'
                 }
                 else if(eventlevel_name == 'Down'){
-                    this.bgColor = 'gray'
-                    this.fontColor = 'white'
+                    bgColor = 'gray'
+                    fontColor = 'white'
                 }
                 else if(eventlevel_name == 'Minor'){
-                    this.bgColor = 'orange'
-                    this.fontColor = 'white'
+                    bgColor = 'orange'
+                    fontColor = 'white'
                 }
                 else if(eventlevel_name == 'Major'){
-                    this.bgColor = 'yellow'
-                    this.fontColor = 'black'
+                    bgColor = 'yellow'
+                    fontColor = 'black'
                 }
                 else {
-                    this.bgColor = 'red'
-                    this.fontColor = 'white'
+                    bgColor = 'red'
+                    fontColor = 'white'
                 }
-    	    return { backgroundColor : this.bgColor , color : this.fontColor}
+    	    return { backgroundColor : bgColor , color : fontColor}
             };   
         }
     },
@@ -210,8 +212,6 @@ export default{
                 value : 'Normal',
                 label : 'Normal',
                 }],   
-            bgColor : '',   
-            fontColor : 'white', 
             drawer : false,
             eventCardDetail : [],
             deviceDetailName : '',

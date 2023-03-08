@@ -37,8 +37,8 @@ export default{
     watch :{
         id(){
             this.getCharList();
-            this.value2 ='',
-            this.value3=''
+            this.value2 ='2023-02-21T15:00:00.000Z',
+            this.value3='2023-02-27T15:00:00.000Z'
         },
         value2(){
             this.getCharList();

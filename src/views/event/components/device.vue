@@ -14,14 +14,14 @@
                     >
                     <el-card >
                         <div class="parent">
-                            <span style="margin-bottom: 10px;"><sapn class="span-style"> · 장비명</sapn>{{item.obj_name}}</span>
-                            <span><sapn class="span-style"> · 장비 구분</sapn>{{item.obj_define_name}}</span>
-                            <span><sapn class="span-style"> · 제조사</sapn>{{item.obj_company_name}}</span>
+                            <span style="margin-bottom: 10px;"><span class="span-style"> · 장비명</span>{{item.obj_name}}</span>
+                            <span><span class="span-style"> · 장비 구분</span>{{item.obj_define_name}}</span>
+                            <span><span class="span-style"> · 제조사</span>{{item.obj_company_name}}</span>
                         </div>
                         <div class="parent">   
-                            <span><sapn class="span-style"> · IP</sapn>{{item.ipaddress_ipv4}}</span>
-                            <span><sapn class="span-style"> · 장비 종류</sapn>{{item.objtype_name}}</span>
-                            <span><sapn class="span-style"> · 모델</sapn>{{item.obj_product_id}}</span>
+                            <span><span  class="span-style"> · IP</span>{{item.ipaddress_ipv4}}</span>
+                            <span><span class="span-style"> · 장비 종류</span>{{item.objtype_name}}</span>
+                            <span><span class="span-style"> · 모델</span>{{item.obj_product_id}}</span>
                         </div>
                     
                     </el-card>
@@ -33,7 +33,7 @@
 
 <script>
 
-export default {
+export default{
     name :'CardCompo',
     props : ['id','name'],
     //props 데이터 변경 감지
