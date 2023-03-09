@@ -95,13 +95,13 @@ export default{
         getCharList(){
             this.$axios.get('app/event/get-chart-data.do', { params: { id: this.id , value : this.value2 , value2: this.value3 }})
             .then(response => {
-            this.chartList = response.data.data.chartList
-            this.categorytyList = response.data.data.categorytyList
+                this.chartList = response.data.data.chartList
+                this.categorytyList = response.data.data.categorytyList
 
-            this.chartOptions.series.data =this.chartList;
-            this.chartOptions.xAxis.categories =this.categorytyList
+                this.chartOptions.series.data =this.chartList;
+                this.chartOptions.xAxis.categories =this.categorytyList
 
-            this.categorytyList = response.data.data.categoryList;   
+                this.categorytyList = response.data.data.categoryList; 
             })
             .catch((ex) => {
               console.log(ex);

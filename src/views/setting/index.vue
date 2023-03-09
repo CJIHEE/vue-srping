@@ -2,10 +2,12 @@
     <div>
         <div>
         <el-drawer 
-        v-model="drawer" title="설정"  
-        :visible.sync="drawer" 
+        v-model="drawerValue" title="설정"  
+        :visible.sync="drawerValue" 
         size="100%" 
-        style="margin: auto;">
+        style="margin: auto;"
+        :before-close="handleClose"
+        >
             <div>
                 <el-row 
                 :gutter="12" 
@@ -46,15 +48,23 @@ export default {
     props : ['drawer'],
     data() {
         return {
-            drawer : false,
+            drawerValue : this.drawer,
             componentName :'GroupSetting',
         }
     },
+    watch: {
+        drawer: function() { // watch it
+            this.drawerValue = this.drawer;
+        }
+    }, 
     components : {GroupManagementSetting , GroupSetting},
     methods: {
         changeComponent(componentName){
             this.componentName = componentName;
             console.log("componentName:" + this.componentName)
+        },
+        handleClose(){
+            this.$emit('changeDrawer');
         }
     },
     

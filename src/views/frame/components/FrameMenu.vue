@@ -33,7 +33,7 @@
     </nav>
     
     <div>
-      <settingIndex :drawer="drawer"> </settingIndex>
+      <settingIndex :drawer="drawer" @changeDrawer="settingDrawer"> </settingIndex>
     </div>
 </div>
 </template>
@@ -63,7 +63,6 @@ export default {
       this.$router.push('/event');
     },
     settingDrawer(){
-      this.$emit('settingDrawer', this.drawer);
       this.drawer= false 
     }
   },
