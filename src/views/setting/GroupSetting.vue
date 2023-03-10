@@ -8,7 +8,8 @@
         </el-button>
 
         <el-button
-        @click="deleteGrop">
+        @click="deleteGrop"
+        :disabled="isDisabled">
             삭제
         </el-button>
         <div>
@@ -40,14 +41,16 @@
                 </el-table-column>
             </el-table>
         </div>
-        
         <div>
-            <el-dialog title="그룹 추가" :visible.sync="dialogFormVisible">
+            <el-dialog 
+            title="그룹 추가" 
+            :visible.sync="dialogFormVisible"
+            append-to-body
+            >
                 <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px" class="demo-ruleForm">
                     <el-form-item label="이름" prop="groupName" :label-width="formLabelWidth">
                     <el-input v-model="ruleForm.groupName" autocomplete="off"></el-input>
                     </el-form-item>
-
                 <el-form-item label="정렬순서" :label-width="formLabelWidth">
                     <el-input-number 
                     v-model="num" controls-position="right" 
@@ -65,12 +68,14 @@
         </div>  
         
         <div>
-            <el-dialog title="그룹 수정" :visible.sync="modifyFormVisible">
+            <el-dialog 
+            title="그룹 수정" 
+            :visible.sync="modifyFormVisible"
+            append-to-body>
                 <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="120px" class="demo-ruleForm">
                     <el-form-item label="이름" prop="groupName" :label-width="formLabelWidth">
                     <el-input v-model="ruleForm.groupName" autocomplete="off"></el-input>
                     </el-form-item>
-
                 <el-form-item label="정렬순서" :label-width="formLabelWidth">
                     <el-input-number 
                     v-model="modifyIndex" controls-position="right" 
@@ -86,13 +91,24 @@
             </span>
             </el-dialog>
         </div>
-
+        
+       
     </div>
 </template>
 
 <script>
     export default {
         name : 'GroupSetting',
+        computed: {
+            isDisabled() {
+            if(this.multipleSelection.length === 0) {
+                return true
+            }
+            else{
+                return false
+            }
+            }
+        },
         data() {
             var checkGroupName = (rule, value, callback) => {
                 if (value === '') {
@@ -128,7 +144,7 @@
                     ]
                 },
                 checkRuleForm : false,
-                formLabelWidth: '120px'    
+                formLabelWidth: '120px',
                 
             }
         },
@@ -179,7 +195,11 @@
                     .then(response => {
                         console.log(response.data)
                         if(response.data.success) {
-                            this.$message('그룹을 추가하였습니다');
+                            this.$message({
+                                showClose: true,
+                                message: '그룹을 추가하였습니다',
+                                type: 'success'
+                            });
                             this.getTableData();
                             this.resetData();
                         }
@@ -216,7 +236,11 @@
                 .then(response => {
                     console.log(response.data.data)
                     if(response.data.success) {
-                            this.$message('그룹을 삭제하였습니다');
+                            this.$message({
+                                showClose: true,
+                                message: '그룹을 삭제하였습니다',
+                                type: 'success'
+                            });
                             this.getTableData();
                             this.resetData();
                         }
@@ -274,7 +298,11 @@
                     .then(response => {
                         console.log(response.data)
                         if(response.data.success) {
-                            this.$message('그룹을 수정하였습니다');
+                            this.$message({
+                                showClose: true,
+                                message: '그룹을 수정하였습니다',
+                                type: 'success'
+                            });
                             this.getTableData();
                         }
                         else {

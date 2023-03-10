@@ -34,6 +34,17 @@
              <span style="flex: 1;">
                 <div style="height: 30px;">
                     관리대상 설정
+                    <el-button-group>
+                        <el-button
+                        @click="checkAllBox">
+                            ☑
+                        </el-button>
+                        <el-button 
+                        style="margin-right: 10px;"
+                        @click="clearAllBox">
+                            ☐
+                        </el-button>
+                    </el-button-group>
                     <el-button 
                      @click="changeGroup">
                         저장
@@ -73,6 +84,11 @@
                         </el-table-column>
                         <el-table-column
                         prop="managegroup_id"
+                        label="종류"
+                        >
+                        </el-table-column>
+                        <el-table-column
+                        prop="obj_id"
                         label="종류"
                         >
                         </el-table-column>
@@ -135,7 +151,7 @@
             getGroupTableData(){
                 this.$axios.get('app/event/get-group.do')
                 .then(response => {
-                    console.log(response.data.data)
+                    //console.log(response.data.data)
                     this.groupTableData = response.data.data
                 })
                 .catch((ex) => {
@@ -149,7 +165,7 @@
              getDeviceTableData(){
                 this.$axios.get('app/event/get-group-device.do', { params: { searchWord:this.searchWord }} )
                 .then(response => {
-                    console.log(response.data.data)
+                    //console.log(response.data.data)
                     this.groupDeviceTableData = response.data.data
                 })
                 .catch((ex) => {
@@ -157,7 +173,7 @@
                 })
                 .finally(() => {
                     // 페이지 로드시 그룹의 첫번째 자동선택되면 그에 맞는 관리장비 체크박스 선택
-                    this.findDevice(this.selectGroupName,this.managegroup_id);
+                    this.findDevice(this.managegroup_id);
                 });
                 },
         //그룹 선택 cahnge
@@ -167,7 +183,7 @@
                 this.selectGroupName = this.currentRow.managegroup_name; //그룹 테이블에서 선택한 그룹이름
                 this.managegroup_id = this.currentRow.managegroup_id;
                 //관리장비 체크박스 선택
-                this.findDevice(this.selectGroupName,this.managegroup_id);                
+                this.findDevice(this.managegroup_id);                
             },    
             setCurrent(row) {
                 this.$refs.singleTable.setCurrentRow(row);
@@ -187,7 +203,7 @@
                 this.multipleSelection = val;
             },
         //그룹 선택시 해당 장비들 찾기
-            findDevice(GroupName,GroupId){
+            findDevice(GroupId){
                 this.checkList =[];
                 this.toggleSelection();
                 for (var i = 0; i < this.groupDeviceTableData.length; i++) {
@@ -232,7 +248,7 @@
                 }  
             },
             deleteCheckList(){
-                console.log(this.newMultipleSelection)
+                //console.log(this.newMultipleSelection)
                 for (var i = 0; i < this.checkList.length; i++) {
                     let originalId = this.checkList[i].obj_id;
                     let boolean = this.newMultipleSelection.includes(originalId); // 새로 체크한 배열에 기존 배열값 있는지 여부
@@ -240,10 +256,8 @@
                         this.deleteList.push(originalId); //삭제 리스트에 담기
                     }
                     } 
-                    console.log(this.deleteList)  
             },
             addCheckList(){
-                console.log(this.originalCheckList)
                 for(var i = 0; i < this.multipleSelection.length; i++){
                     let changedId = this.multipleSelection[i].obj_id;
                     let boolean = this.originalCheckList.includes(changedId) // 기존 배열에 새로 체크한 배열값 있는 지 여부
@@ -253,14 +267,19 @@
                 }
             },
             cancle(){
-                this.findDevice(this.selectGroupName);   
+                this.findDevice(this.managegroup_id);   
             },
             editGroupOfDevice(){
                 const newInsertList = this.insertList.join(",");
                 const newdeleteList = this.deleteList.join(",");
                 this.$axios.get('app/event/edit-group-of-device.do', { params: { insertList:newInsertList , deleteList:newdeleteList, managegroupId : this.managegroup_id  }} )
                 .then(response => {
-                    this.$message('그룹 장비를 저장했습니다');
+                    //console.log(response.data.data)
+                    this.$message({
+                                showClose: true,
+                                message: '그룹 장비를 저장했습니다',
+                                type: 'success'
+                            });
                 })
                 .catch((ex) => {
                     this.$message.error('오류가 발생했습니다');
@@ -268,7 +287,15 @@
                 .finally(() => {
                     this.getDeviceTableData();
                 });
+            },
+            checkAllBox(){
+                this.toggleSelection();
+                this.toggleSelection(this.groupDeviceTableData);
+            },
+            clearAllBox(){
+                this.toggleSelection();
             }
+            
         
         } 
     }            

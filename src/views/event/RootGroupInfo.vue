@@ -1,10 +1,10 @@
 <template>
     <div>
         <div>
-            <component :is="componentName" :id="id" :name="name"/>
+            <component :is="componentName" :id="id" :name="name" @submitObjNameId="setObjNameId"/>
         </div>
        
-        <div>
+        <div style="margin-top: 15px;">
             <chart :id="id"></chart>
         </div>
 
@@ -22,12 +22,14 @@
                     </el-option>
                 </el-select>
             </div>
-            <div style="float: right;">
+            <div style="margin: 10px 0px; flex: 1.5;">
                 <el-input
                     placeholder="검색"
                     v-model="searchWord"
-                    @change="getEventList">
-                    <i slot="prefix" class="el-input__icon el-icon-search"></i>
+                    @change="getEventList"
+                    style="float:right; width: 35%;"
+                    prefix-icon="el-icon-search"
+                    >
                 </el-input>
             </div>
         </div>
@@ -39,7 +41,6 @@
                 <el-table-column
                 label="등급"
                 width="180">
-                <!-- prop="eventlevel_name" -->
                     <template slot-scope="scope">
                         <el-tag
                          :style="styleBinding(scope.row.eventlevel_name)"
@@ -83,42 +84,58 @@
                 >
                 </el-table-column>
             </el-table>
-            <div class="block">
-                    <el-pagination
-                    @size-change="handleSizeChange"
-                    @current-change="handleCurrentChange"
-                    :current-page.sync="currentPage"
-                    :page-sizes="[25, 50, 100, 500]"
-                    :page-size="sizePerPage"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    :total="totalPage">
-                    </el-pagination>
+            <div 
+            class="block" 
+            style="margin-top: 10px;">
+                <el-pagination
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+                :current-page.sync="currentPage"
+                :page-sizes="[25, 50, 100, 500]"
+                :page-size="sizePerPage"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="totalPage">
+                </el-pagination>
             </div>
         </div>
-
-        <el-drawer v-model="drawer" title="이벤트 성능 정보"  :visible.sync="drawer" size="50%" >
+        <el-drawer
+         v-model="drawer" 
+         title="이벤트 성능 정보"  
+         :visible.sync="drawer" size="50%" >
             <div  
             v-for="(item,idx) in eventCardDetail" 
             :key="idx"
+            style="margin: auto;"
             >
                 <el-row :gutter="24" style="margin: auto;">
-                <el-col 
-                    :span="20"
-                    shadow="always" 
-                    style="margin: auto;">
-                    <el-card style="margin: auto;">
-                        <div class="parent">
-                            <span style="margin-bottom: 10px;"><span class="span-style"> · 장비명 </span>{{ item.obj_name }}</span>
+                    <el-col 
+                        :span="20"
+                        shadow="always" 
+                        style="margin: auto;">
+                        <el-card>
+                            <div class="parent">
+                                <span style="margin-bottom: 10px;">
+                                    <span class="span-style">
+                                        · 장비명 
+                                    </span>
+                                    {{ item.obj_name }}
+                                </span>
+                            </div>
+                            <div class="parent">   
+                                <span>
+                                    <span class="span-style">
+                                        · 장애 메시지 
+                                    </span>
+                                    {{item.event_message}}
+                                </span>
+                            </div>
+                        </el-card>
+                        <div>
+                            <chartDetail :deviceDetailName="deviceDetailName">
+                            </chartDetail>
                         </div>
-                        <div class="parent">   
-                            <span><span class="span-style"> · 장애 메시지 </span>{{item.event_message}}</span>
-                        </div>
-                    </el-card>
-                    <div>
-                        <chartDetail :deviceDetailName="deviceDetailName"></chartDetail>
-                    </div>
-                </el-col>
-            </el-row>
+                    </el-col>
+                </el-row>
             </div>
         </el-drawer>
 
@@ -215,6 +232,7 @@ export default{
             drawer : false,
             eventCardDetail : [],
             deviceDetailName : '',
+            objDefineName:'',
         }
 
     },
@@ -245,7 +263,8 @@ export default{
                                                                         currentPage:this.currentPage, 
                                                                         sizePerPage:this.sizePerPage, 
                                                                         value:this.value, 
-                                                                        searchWord:this.searchWord
+                                                                        searchWord:this.searchWord,
+                                                                        objDefineName : this.objDefineName
                                                                     }})
             .then(response => {
             //console.log(response.data.data)
@@ -257,6 +276,9 @@ export default{
             .catch((ex) => {
               console.log(ex);
             })
+            .finally(() => {
+            this.objDefineName ='';
+            });
         }, 
         eventDetail(index){
             console.log("index : " + index);
@@ -265,7 +287,8 @@ export default{
                                                                         index: index,
                                                                         id: this.id , 
                                                                         value:this.value, 
-                                                                        searchWord:this.searchWord}})
+                                                                        searchWord:this.searchWord,
+                                                                        objDefineName : ''}})
             .then(response => {
                 //console.log(response.data.data)
                 this.eventCardDetail = response.data.data
@@ -274,8 +297,12 @@ export default{
             .catch((ex) => {
                 console.log(ex);
             })
-        
         },
+        setObjNameId(objDefineName){
+            this.objDefineName = objDefineName;
+            this.getEventList();
+            this.objDefineName ='';
+        }
 
     },
     
@@ -293,10 +320,11 @@ export default{
 }
 .child {
     flex: 0.5;
+    margin: 10px 10px 10px 0px
 }
 .span-style {
     font-weight: bold;
-    margin-right: 10px;
+    margin-right: 10px
 }
 
 </style>

@@ -10,10 +10,15 @@
                 v-for="(item,index) in cardList" 
                 :key="index"
                 >
-                <el-card >
+                <el-card
+                shadow="always"
+                @click.native="getObjNameTable(item.obj_define_name,index)"
+                class="card-style"
+                :class="{showColor: index === clcikCardIndex}"
+                >
                 <p>{{item.obj_define_name}}</p>
-                <p>{{item.count}}</p>
-                </el-card>
+                <p>{{item.count}}대</p>
+                </el-card>  
             </el-col>
         </el-row>
 
@@ -38,11 +43,11 @@ export default {
         return {
             cardList : [],
             test: '',
+            clcikCardIndex: '',
         }
     },
     methods : {
         getCardData(){
-            console.log("id: " + this.id)
             this.$axios.get('app/event/get-card.do', { params: { id: this.id } })
             .then(response => {
             //console.log(response.data.data)
@@ -52,6 +57,11 @@ export default {
               console.log(ex);
             })
         }, 
+        getObjNameTable(objDefineName,index){
+            this.$emit('submitObjNameId',objDefineName)
+            this.clcikCardIndex = index
+
+        }
 
 
 
@@ -69,4 +79,15 @@ p{
     margin-bottom: 15px;
     font-weight: bold;
 }
+.card-style{
+    cursor: pointer; 
+    background-color:  rgba(184, 219, 248, 0.76); 
+    color: rgb(44, 91, 243); 
+    font-weight: bold;
+}
+.showColor{
+    background-color: rgba(5, 40, 199, 0.76);
+    color: white;
+}
+
 </style>
