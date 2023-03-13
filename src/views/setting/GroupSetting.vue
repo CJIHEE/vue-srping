@@ -1,17 +1,9 @@
 <template>
     <div >
         그룹 목록 
-        <el-button
-        @click="dialogFormVisible = true"
-        >
-            추가
-        </el-button>
-
-        <el-button
-        @click="deleteGrop"
-        :disabled="isDisabled">
-            삭제
-        </el-button>
+        <el-button @click="dialogFormVisible = true" >추가</el-button>
+        <el-button @click="deleteGrop" :disabled="isDisabled"> 삭제 </el-button>
+        <!-- 그룹 목록 조회-->
         <div>
             <el-table
             :data="tableData"
@@ -41,6 +33,7 @@
                 </el-table-column>
             </el-table>
         </div>
+        <!-- 그룹 추가 dialog-->
         <div>
             <el-dialog 
             title="그룹 추가" 
@@ -66,7 +59,7 @@
             </span>
             </el-dialog>
         </div>  
-        
+         <!-- 그룹 수정 dialog-->
         <div>
             <el-dialog 
             title="그룹 수정" 
@@ -91,8 +84,6 @@
             </span>
             </el-dialog>
         </div>
-        
-       
     </div>
 </template>
 
@@ -101,22 +92,23 @@
         name : 'GroupSetting',
         computed: {
             isDisabled() {
-            if(this.multipleSelection.length === 0) {
-                return true
-            }
-            else{
-                return false
-            }
+                if(this.multipleSelection.length === 0) {
+                    return true
+                }
+                else{
+                    return false
+                }
             }
         },
         data() {
+            //서버에서 가져온 그룹 목록과 비교하여 유효성 검사
             var checkGroupName = (rule, value, callback) => {
                 if (value === '') {
                 callback(new Error('그룹 이름을 입력해 주세요.'));
                 }else {
                     let flag = false
                     for (var i = 0; i < this.groupNameList .length; i++) {
-                        if(value === this.groupNameList[i]){flag = true }
+                        if(value === this.groupNameList[i]){flag = true; }
                     } 
                     if(flag){
                         callback(new Error('이미 있는 그룹명입니다. 다른 이름을 입력해 주세요.'));
@@ -140,8 +132,8 @@
                     },
                 rules : {
                     groupName :[
-                    {validator: checkGroupName, required:true, trigger:'blur'},
-                    ]
+                                {validator: checkGroupName, required:true, trigger:'blur'},
+                                ]
                 },
                 checkRuleForm : false,
                 formLabelWidth: '120px',
@@ -150,7 +142,7 @@
         },
         watch:{
             orderIndex(){
-                this.num = this.orderIndex
+                this.num = this.orderIndex;
             }
         },
         created() {
@@ -161,18 +153,13 @@
             getTableData(){
                 this.$axios.get('app/event/get-group.do')
                 .then(response => {
-                    console.log(response.data.data)
-                    this.tableData = response.data.data
+                    this.tableData = response.data.data;
                     //그룹 아이디 추출
                     for (var i = 0; i < this.tableData.length; i++) {
-                            this.groupNameList.push(this.tableData[i].managegroup_name)
+                            this.groupNameList.push(this.tableData[i].managegroup_name);
                     } 
-                    //정렬순서 최대값
-                    const indexArray = [];
-                    for (var i = 0; i < this.tableData.length; i++) {
-                            indexArray.push(this.tableData[i].orderby_index)
-                    } 
-                    this.orderIndex = Math.max.apply(null, indexArray)+1;
+                    //정렬순서 최대값으로 설정
+                    this.setMaxIndex();
                 })
                 .catch((ex) => {
                     console.log(ex);
@@ -182,11 +169,19 @@
             handleSelectionChange(val){
                 this.multipleSelection = val;
             },
+            //정렬순서 최대값으로 설정
+            setMaxIndex(){
+                const indexArray = [];
+                for (var i = 0; i < this.tableData.length; i++) {
+                    indexArray.push(this.tableData[i].orderby_index)
+                } 
+                this.orderIndex = Math.max.apply(null, indexArray)+1;
+            },
             //그룹 추가
             addGroup(formName){
                 //유효성 검사
                 this.checkRule(formName);
-                this.checkRuleForm == true?this.dialogFormVisible=false:this.dialogFormVisible=true
+                this.checkRuleForm == true?this.dialogFormVisible=false:this.dialogFormVisible=true;
                 //유효성 검사 통과시 데이터 추가
                 if(this.checkRuleForm){
                     this.$axios.get('app/event/add-group.do',{ params: {  managegroup_name : this.ruleForm.groupName, 
@@ -214,12 +209,10 @@
                 else{
                     this.$message.error('오류가 발생하였습니다.');
                 }
-                this.checkRuleForm =false
+                this.checkRuleForm =false;
                 this.resetData();
-                
             },
             handleChange(value){
-                //this.orderIndex = value;
             },
             //삭제
             deleteGrop(){
@@ -254,6 +247,7 @@
                 //배열초기화
                 this.array = [];
                 this.selectArray =[];
+                //데이터 초기화
                 this.resetData();
             },
             //유효성 검사
@@ -261,7 +255,6 @@
                 this.$refs[formName].validate((valid) => {
                 if (valid) {
                     this.checkRuleForm = true;
-                //this.printMessage();
                 } else {
                     this.checkRuleForm = false;
                     return false;
@@ -280,17 +273,18 @@
                 this.groupNameList =[];
                 this.num = this.orderIndex;
             },
+            //수정 dialog에 data set
             modifyDialog(row){
                 this.modifyFormVisible = true;
                 this.ruleForm.groupName = row.managegroup_name;
-                console.log("row.orderby_index: " + row.orderby_index)
                 this.modifyIndex = row.orderby_index;
-                console.log("this.modifyIndex: " + this.modifyIndex)
                 
             },
+            //수정
             modifyGroup(formName){
+                //유효성 검사
                 this.checkRule(formName);
-                this.checkRuleForm == true?this.modifyFormVisible=false:this.modifyFormVisible=true
+                this.checkRuleForm == true?this.modifyFormVisible=false:this.modifyFormVisible=true;
                 if(this.checkRuleForm){
                     this.$axios.get('app/event/modify-group.do',{ params: {  managegroup_name : this.ruleForm.groupName, 
                                                                              orderby_index: this.modifyIndex
@@ -318,13 +312,10 @@
                 else {
                     this.$message.error('오류가 발생하였습니다.');
                 }
-                 this.checkRuleForm =false
+                 this.checkRuleForm =false;
                  this.ruleForm.groupName = '';
             }
-            //수정
-
         },
-
     }
     </script>
     

@@ -6,12 +6,13 @@
                 v-model="value2"
                 type="datetime"
                 placeholder="Select date and time"
-                style="margin: 15px;">
+                style="margin : 25px 5px;">
                 </el-date-picker>
                 <el-date-picker
                 v-model="value3"
                 type="datetime"
                 placeholder="Select date and time"
+                :disabled="disabledDate"
                 >
                 </el-date-picker>
             </div>
@@ -19,13 +20,12 @@
         </div>
     </div>
 </template>
-
 <script>
 
+import dayjs from 'dayjs'
 export default{
     name : 'charList',
     props : ['deviceDetailName'],
-    //props 데이터 변경 감지
     watch :{
         id(){
             this.getCharList();
@@ -33,10 +33,10 @@ export default{
             this.value3=''
         },
         value2(){
-            this.getCharList();
+            this.checkDate();
         },
         value3(){
-            this.getCharList();
+            this.checkDate();
         }
     },
     data() {
@@ -45,7 +45,6 @@ export default{
             chartList2:[1,23,4,5,6,],
             categorytyList:[],
             chartOptions : {
-                
                 title: {
                     text: '성능추이',
                     
@@ -82,6 +81,9 @@ export default{
             },
             value2 : '2023-02-22T15:00:00.000Z',
             value3 : '2023-02-23T15:00:00.000Z',
+            rndChartArray : [],
+            rndChartArray2 : [],
+            disabledDate : false,
         }
     }, 
     created() {
@@ -89,49 +91,58 @@ export default{
     },
     methods: {
         checkDate(){
-            if(this.value3 > this.value2) {
-                alert("똑바로")
+            let startDay = dayjs(this.value2).format("YYYY-MM-DD HH:mm:ss");
+            let endDay =dayjs(this.value3).format("YYYY-MM-DD HH:mm:ss");
+            if(startDay > endDay) {
+                this.disabledDate = true;
+                alert(startDay+"보다 이전 일자는 검색할 수 없습니다");
             }
             else {
+                this.disabledDate = false;
                 this.getCharList();
             }
         },
         getCharList(){
             this.$axios.get('app/event/get-chart-data.do', { params: { id: 'chartDetail' , value : this.value2 , value2: this.value3 }})
             .then(response => {
-                this.chartOptions.series =[];
-                this.categoryList = response.data.data.categoryList
-                this.chartOptions.xAxis.categories =this.categoryList
+                this.categoryList = response.data.data.categoryList;
                     //난수 발생
-                    const rndChartArray = [];
-                    for(var i=0; i <this.categoryList.length; i++){
-                        let rnd = Math.floor(Math.random() * 101);
-                        const rndArray = [];
-                        rndArray.push(this.categoryList[i]);
-                        rndArray.push(rnd);
-                        rndChartArray.push(rndArray)
-                    }
-
-                    const rndChartArray2 = [];
-                    for(var i=0; i <this.categoryList.length; i++){
-                        let rnd = Math.floor(Math.random() * 101);
-                        const rndArray2 = [];
-                        rndArray2.push(this.categoryList[i]);
-                        rndArray2.push(rnd);
-                        rndChartArray2.push(rndArray2)
-                    }
-                    this.chartOptions.series.push({name : '난수 데이터1' , data :rndChartArray})
-                    this.chartOptions.series.push({name : '난수 데이터2' , color:'green' ,data :rndChartArray2})
-
+                    this.creatRandomNumber();
+                    //데이터 set
+                    this.setData();
             })
             .catch((ex) => {
               console.log(ex);
             })
         },
-
-
+        //난수 발생
+        creatRandomNumber(){
+            this.rndChartArray = [];
+                    for(var i=0; i <this.categoryList.length; i++){
+                        let rnd = Math.floor(Math.random() * 101);
+                        const rndArray = [];
+                        rndArray.push(this.categoryList[i]);
+                        rndArray.push(rnd);
+                        this.rndChartArray.push(rndArray);
+                    }
+            this.rndChartArray2 = [];
+            for(var i=0; i <this.categoryList.length; i++){
+                let rnd = Math.floor(Math.random() * 101);
+                const rndArray2 = [];
+                rndArray2.push(this.categoryList[i]);
+                rndArray2.push(rnd);
+                this.rndChartArray2.push(rndArray2);
+            }
+        },
+        setData(){
+            //데이터 초기화
+            this.chartOptions.series =[];
+            //데이터 set
+            this.chartOptions.xAxis.categories =this.categoryList;
+            this.chartOptions.series.push({name : '난수 데이터1' , data :this.rndChartArray});
+            this.chartOptions.series.push({name : '난수 데이터2' , color:'green' ,data :this.rndChartArray2});
+        }
     },  
-
 }
 </script>
 
@@ -139,7 +150,6 @@ export default{
 .title {
     margin-bottom: 15px;
 }
-
 .chart{
     text-align: center;
 }
