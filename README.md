@@ -24,3 +24,4 @@ npm run lint
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
 라우터를 이용한 페이지 라우팅
+axios를 사용하여 서버와 통신
