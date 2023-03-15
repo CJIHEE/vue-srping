@@ -19,7 +19,7 @@
 	<select id="getTreeData" resultType="java.util.Map">
 			
 			SELECT 
-				m.managegroup_id, managegroup_name AS label, GROUP_CONCAT(o.obj_name SEPARATOR ',') AS Node , GROUP_CONCAT(o.obj_id SEPARATOR ',') AS obj_id
+				m.managegroup_id AS treeKey, managegroup_name AS label, GROUP_CONCAT(o.obj_name SEPARATOR ',') AS Node , GROUP_CONCAT(o.obj_id SEPARATOR ',') AS obj_id
 			FROM 
 				managegrp m
 			LEFT JOIN 
@@ -31,70 +31,10 @@
 
 	</select>
 	
-	<!-- 카드 데이터 -->
-	<select id="getCardData" resultType="java.util.Map" parameterType="HashMap">
-			<if test = "isNumeric == false">
-			SELECT 
-				obj_define_name, COUNT(*) AS count
-			FROM 
-				obj_define od
-			INNER JOIN 
-				obj o ON o.obj_define_id = od.obj_define_id	
-			INNER JOIN
-				(
-				SELECT 
-					m.managegroup_id, managegroup_name, obj_id
-				FROM 
-					managegrp m
-				INNER JOIN 
-					managegrp_obj mo ON m.managegroup_id = mo.managegroup_id		
-				)mm ON o.obj_id = mm.obj_id
-				<if test="id != 'root'">
-				WHERE managegroup_name = #{id}	
-				</if>
-			GROUP BY o.obj_define_id	
-			</if>
-			
-			<if test="isNumeric == true">
-			SELECT 
-				 o.obj_name, mm.obj_id, ot.objtype_name, obj_define_name, IFNULL(o.ipaddress_ipv4, '-') AS ipaddress_ipv4,IFNULL(o.obj_product_id,'-')AS obj_product_id ,mm.managegroup_name, ot.objtype_name ,co.obj_company_name
-			FROM 
-				obj_define od
-			INNER JOIN 
-				obj o ON o.obj_define_id = od.obj_define_id	
-			INNER JOIN
-				obj_company co ON o.obj_company_id = co.obj_company_id	
-			INNER JOIN
-				objtype ot ON o.objtype_id = ot.objtype_id
-			INNER JOIN
-				(
-				SELECT 
-					m.managegroup_id, managegroup_name, obj_id
-				FROM 
-					managegrp m
-				INNER JOIN 
-					managegrp_obj mo ON m.managegroup_id = mo.managegroup_id	
-				GROUP BY
-					 mo.obj_id		
-				)mm ON o.obj_id = mm.obj_id
-			WHERE o.obj_id = #{id}
-			</if>
-	</select>
-	
-	<!-- 이벤트 목록 조회 -->
-	<select id="getEventList"  resultType="java.util.Map" parameterType="HashMap">
-		<if test="detail == 1">
-		SELECT
-		 	obj_define_name, obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message, managegroup_name, DATE_FORMAT(check_datetime, "%Y/%m/%d %k:%i:%S") AS check_datetime,rno
-		</if>
-		<if test="detail == 2">
-		SELECT
-		 	obj_define_name,obj_name,event_message,DATE_FORMAT(check_datetime, "%Y/%m/%d %k:%i:%S") AS check_datetime,rno
-		</if>
-		FROM
+	<sql id="tableQuery">
 			(
 			SELECT 
-				 obj_define_name,row_number() over(ORDER BY check_datetime DESC) AS rno, o.obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message,check_datetime,mm.managegroup_name
+				 obj_define_name,row_number() over(ORDER BY check_datetime DESC) AS rno, o.obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message,check_datetime,mm.managegroup_name ,mm.managegroup_id
 			FROM 
 				obj_define od
 			INNER JOIN 
@@ -119,49 +59,120 @@
 					managegrp m
 				INNER JOIN 
 					managegrp_obj mo ON m.managegroup_id = mo.managegroup_id
-				<if test="isNumeric == true">
+			<if test="isNumeric == true">
+			GROUP BY
+				obj_id
+			</if>			
+			)mm ON o.obj_id = mm.obj_id			
+    </sql>
+    <sql id="manageGroupQuery">
+   			SELECT 
+				m.managegroup_id, managegroup_name, obj_id
+			FROM 
+				managegrp m
+			INNER JOIN 
+				managegrp_obj mo ON m.managegroup_id = mo.managegroup_id		 
+   </sql>
+	<!--root&그룹 카드 데이터 -->
+	<select id="getCardData" resultType="java.util.Map" parameterType="HashMap">
+			SELECT 
+				obj_define_name, COUNT(*) AS count
+			FROM 
+				obj_define od
+			INNER JOIN 
+				obj o ON o.obj_define_id = od.obj_define_id	
+			INNER JOIN
+				(
+				<include refid="manageGroupQuery"></include>	
+				)mm ON o.obj_id = mm.obj_id
+				<if test="id != 'root'">
+				WHERE managegroup_id = #{id}	
+				</if>
+			GROUP BY o.obj_define_id	
+	</select>
+	
+	<!-- 노드 장비 카드-->
+	<select id="getDeviceData" resultType="com.watchtek.watchall.vo.DeviceVO" parameterType="HashMap">
+			SELECT 
+				 o.obj_name, mm.obj_id, ot.objtype_name, obj_define_name, IFNULL(o.ipaddress_ipv4, '-') AS ipaddress_ipv4,IFNULL(o.obj_product_id,'-')AS obj_product_id ,mm.managegroup_name, ot.objtype_name ,co.obj_company_name
+			FROM 
+				obj_define od
+			INNER JOIN 
+				obj o ON o.obj_define_id = od.obj_define_id	
+			INNER JOIN
+				obj_company co ON o.obj_company_id = co.obj_company_id	
+			INNER JOIN
+				objtype ot ON o.objtype_id = ot.objtype_id
+			INNER JOIN
+				(
+				<include refid="manageGroupQuery"></include>	
 				GROUP BY
-					obj_id
-				</if>			
-				)mm ON o.obj_id = mm.obj_id	
-			WHERE	
-				<if test="id != 'root' and isNumeric == false">
-					mm.managegroup_name = #{id}	
-					<if test="objNameList != ''">
-						AND obj_define_name in
-						 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
-					      	 #{item}
-					     </foreach>
-					</if>
+					 mo.obj_id		
+				)mm ON o.obj_id = mm.obj_id
+			WHERE o.obj_id = #{id}	
+	</select>
+	
+	<resultMap type="HashMap" id="eventListlMap">
+   	   <result property="objDefineName"    	 column="obj_define_name"      	javaType="String"/>
+   	   <result property="eventLevelName"     column="eventlevel_name"  	   	javaType="String"/>
+   	   <result property="objName"           column="obj_name"      	  	javaType="String"/>
+   	   <result property="objtypeName"        column="objtype_name"      	javaType="String"/>
+	   <result property="objCompanyName"     column="obj_company_name"      javaType="String"/>	
+	   <result property="rscName"            column="rsc_name"      	   	javaType="String"/>	
+   	   <result property="eventMessage" 		 column="event_message"      	javaType="String"/>
+   	   <result property="managegroupName"    column="managegroup_name"      javaType="String"/>
+   	   <result property="checkDatetime" 	 column="check_datetime"        javaType="String"/>
+   	   <result property="rno"                 column="rno"      			javaType="String"/>
+   </resultMap> 
+		    
+	<!-- 이벤트 목록 조회 -->
+	<select id="getEventList"  resultMap="eventListlMap" parameterType="HashMap">
+		SELECT
+			<if test="eventListOReventDetail == 'eventList'">
+			 	obj_define_name, obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message, managegroup_name, DATE_FORMAT(check_datetime, "%Y/%m/%d %k:%i:%S") AS check_datetime,rno
+			</if>
+			<if test="eventListOReventDetail == 'eventDetail'">
+			 	obj_define_name,obj_name,event_message,DATE_FORMAT(check_datetime, "%Y/%m/%d %k:%i:%S") AS check_datetime,rno
+			</if>
+		FROM
+			 <include refid="tableQuery"></include>
+		WHERE	
+			<if test="id != 'root' and isNumeric == false">
+				mm.managegroup_id = #{id}	
+				<if test="objNameList != ''">
+					AND obj_define_name in
+					 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
+				      	 #{item}
+				     </foreach>
 				</if>
-				<if test="id == 'root'"> 
-					1=1	
-					<if test="objNameList != ''">
-						AND obj_define_name in
-						 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
-					      	 #{item}
-					     </foreach>
-					</if>
+			</if>
+			<if test="id == 'root'"> 
+				1=1	
+				<if test="objNameList != ''">
+					AND obj_define_name in
+					 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
+				      	 #{item}
+				     </foreach>
 				</if>
-				<if test="isNumeric == true">
-					O.obj_id = #{id}
-				</if>
-				<if test="value !=''">
-					AND eventlevel_name = #{value}
-				</if>	
-				<if test="searchWord !=''">
-					AND event_message LIKE'%${searchWord}%' 
-				</if>	
-				)A
-			<if test="detail == 1">
-			WHERE
+			</if>
+			<if test="isNumeric == true">
+				O.obj_id = #{id}
+			</if>
+			<if test="value !=''">
+				AND eventlevel_name = #{value}
+			</if>	
+			<if test="searchWord !=''">
+				AND event_message LIKE'%${searchWord}%' 
+			</if>	
+			) obj
+		WHERE	
+			<if test="eventListOReventDetail == 'eventList'">
 				rno BETWEEN #{startRno} AND #{endRno}	
 			</if>
-			<if test="detail == 2">
-			WHERE
+			<if test="eventListOReventDetail == 'eventDetail'">
 				rno = #{index}
 			</if>
-			ORDER BY check_datetime DESC
+		ORDER BY check_datetime DESC
 	</select>
 	
 	<!-- 총 페이지수 알아오기 -->
@@ -169,42 +180,11 @@
 			SELECT 
 				Count(*)
 			FROM
-				(
-				SELECT 
-					 obj_define_name,row_number() over(ORDER BY check_datetime DESC) AS rno, o.obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message,check_datetime,mm.managegroup_name
-				FROM 
-					obj_define od
-				INNER JOIN 
-					obj o ON o.obj_define_id = od.obj_define_id
-				INNER JOIN 
-					objtype ot ON o.objtype_id = ot.objtype_id	
-				INNER JOIN
-					(SELECT 
-						eventlevel_name, obj_id,rsc_name,event_message,check_datetime
-					FROM
-						eventlevel el
-					INNER JOIN
-						event_hist eh ON el.eventlevel_id = eh.eventlevel_id
-					)e ON o.obj_id = e.obj_id
-				INNER JOIN
-					obj_company oc ON o.obj_company_id = oc.obj_company_id	
-				INNER JOIN
-					(
-					SELECT 
-						m.managegroup_id, managegroup_name, obj_id
-					FROM 
-						managegrp m
-					INNER JOIN 
-						managegrp_obj mo ON m.managegroup_id = mo.managegroup_id
-					<if test="isNumeric == true">
-					GROUP BY
-						obj_id
-					</if>		
-					)mm ON o.obj_id = mm.obj_id	
-				)A
-				WHERE
-				<if test="id != 'root' and isNumeric == false">
-					A.managegroup_name = #{id}	
+			 	<include refid="tableQuery"></include>
+				) obj
+			WHERE
+				<if test='id != "root" and isNumeric == false'>
+					obj.managegroup_id = #{id}	
 					<if test="objNameList != ''">
 						AND obj_define_name in
 						 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
@@ -212,7 +192,7 @@
 					     </foreach>
 					</if>
 				</if>
-				<if test="id == 'root'"> 
+				<if test='id == "root"'> 
 					1=1
 					<if test="objNameList != ''">
 						AND obj_define_name in
@@ -240,64 +220,56 @@
 	
 	<!-- 차트 데이터 조회 -->
 		<select id="getChartData"  resultType="java.util.Map" parameterType="HashMap">
-			    <if test="selectDate == 0 || selectDate == 3">
-			    SELECT 
-					DATE_FORMAT(FLOOR(DATE(check_datetime)), "%Y/%m/%d") AS DATETIME ,COUNT(*) AS COUNT
-			    </if>
-			    <if test="selectDate == 1">
-			    SELECT 
-					DATE_FORMAT(check_datetime,"%Y-%m-%d %H:%i:%S") AS DATETIME ,COUNT(*) AS COUNT
-			    </if>
-				 <if test="selectDate == 2">
-			    SELECT 
-					CONCAT(DATE_FORMAT(check_datetime,'%Y-%m-%d'), ' ', HOUR(check_datetime),'시') AS DATETIME, COUNT(HOUR(check_datetime)) AS COUNT
-			    </if>
+				SELECT 
+				    <if test="selectDate == 0 || selectDate == 3">
+						DATE_FORMAT(FLOOR(DATE(check_datetime)), "%Y/%m/%d") AS DATETIME ,COUNT(*) AS COUNT
+				    </if>
+				    <if test="selectDate == 1">
+						DATE_FORMAT(check_datetime,"%Y-%m-%d %H:%i:%S") AS DATETIME ,COUNT(*) AS COUNT
+				    </if>
+					 <if test="selectDate == 2">
+						CONCAT(DATE_FORMAT(check_datetime,'%Y-%m-%d'), ' ', HOUR(check_datetime),'시') AS DATETIME, COUNT(HOUR(check_datetime)) AS COUNT
+				    </if>
 				FROM 	
 					event_hist e
 				INNER JOIN 
 					obj o ON e.obj_id = o.obj_id 
 				INNER JOIN
 					(
-					SELECT 
-						m.managegroup_id, managegroup_name, obj_id
-					FROM 
-						managegrp m
-					INNER JOIN 
-						managegrp_obj mo ON m.managegroup_id = mo.managegroup_id	
+					<include refid="manageGroupQuery"></include>	
 					<if test="isNumeric == true">
 					GROUP BY
 						obj_id
 					</if>
 					)mm ON o.obj_id = mm.obj_id	
-				<if test="id != 'chartDetail'"> 
-					<if test="id != 'root' and isNumeric == false">
-						WHERE managegroup_name = #{id}	
+				WHERE	
+					<if test="id != 'chartDetail'"> 
+						<if test='id != "root" and isNumeric == false'>
+							managegroup_id = #{id}	
+						</if>
+						<if test='id == "root"'> 
+							1=1
+						</if>
+						<if test="isNumeric == true">
+							o.obj_id = #{id}
+						</if>
+					</if>	
+					<if test="selectDate == 0">
+						AND check_datetime BETWEEN DATE_ADD(NOW(), INTERVAL -1 WEEK ) AND NOW()
 					</if>
-					<if test="id == 'root'"> 
-						WHERE 1=1
+					<if test="selectDate != 0">
+						AND check_datetime BETWEEN #{dateTime1} AND #{dateTime2}
 					</if>
-					<if test="isNumeric == true">
-						WHERE o.obj_id = #{id}
+				GROUP BY 
+					<if test="selectDate == 0 || selectDate == 3">
+						FLOOR(DATE(check_datetime))
 					</if>
-				</if>	
-				<if test="selectDate == 0">
-					AND check_datetime BETWEEN DATE_ADD(NOW(), INTERVAL -1 WEEK ) AND NOW()
-				</if>
-				<if test="selectDate != 0">
-					AND check_datetime BETWEEN #{dateTime1} AND #{dateTime2}
-				</if>
-				<if test="selectDate == 0 || selectDate == 3">
-					GROUP BY 
-							FLOOR(DATE(check_datetime))
-				</if>
-				<if test="selectDate == 1">
-					GROUP BY 
-							SUBSTR(DATE_FORMAT(check_datetime,'%Y%m%d%H%i%S'),1,10), FLOOR(SUBSTR(DATE_FORMAT(check_datetime,'%Y%m%d%H%i%S'),11,2)/5)
-			    </if>
-				<if test="selectDate == 2">
-					GROUP
-						 BY DATETIME
-				</if>
+					<if test="selectDate == 1">
+						SUBSTR(DATE_FORMAT(check_datetime,'%Y%m%d%H%i%S'),1,10), FLOOR(SUBSTR(DATE_FORMAT(check_datetime,'%Y%m%d%H%i%S'),11,2)/5)
+				    </if>
+					<if test="selectDate == 2">
+						DATETIME
+					</if>
 				ORDER BY check_datetime ASC
 		</select>
 		
@@ -383,5 +355,7 @@
 				WHERE 
 					managegroup_id=#{managegroupId} AND obj_id=#{objId}
 			</delete>
+			
 
+					
 </mapper>

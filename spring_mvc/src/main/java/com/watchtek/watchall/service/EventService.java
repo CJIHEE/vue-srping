@@ -3,24 +3,22 @@ package com.watchtek.watchall.service;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
-import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.watchtek.watchall.mapper.EventMapper;
+import com.watchtek.watchall.vo.DeviceVO;
 
 /**
  * 이벤트 웹 서비스
@@ -46,17 +44,22 @@ public class EventService
         return mapper.getEventLevels();
     }
 
-    //트리정보 조회
+    /**
+     * 트리 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 14.
+     */
 	public  List<Map<String, Object>> getTreeData() {
 		//원본 데이터 받아오기
 		List<Map<String, Object>> originalList = mapper.getTreeData();
-		int id = 1; //고유값
 		List<Map<String,Object>> changedList = new ArrayList<>();
 		
 		//내려줄 List에 입력할 트리의그룹 값 Map에 넣기
 		for(Map<String,Object> originalMap : originalList) {
 			Map<String, Object> changedMap = new HashMap<>();
-			changedMap.put("id", originalMap.get("label"));
+			changedMap.put("id", "group"+ (int)((double)originalMap.get("treeKey")));
 			changedMap.put("label", originalMap.get("label"));
 			
 			// 변경된 List에 입력할 트리의 노드 값 List로 만들기 *시작
@@ -67,45 +70,123 @@ public class EventService
 			//노드값 Map에 넣기
 			for(int i = 0; i< originalChildren.size(); i++) {
 				Map<String, Object> newChild = new HashMap<>();
-				//treekey로 obj_id 값 넣어주기
-				newChild.put("id",originalChildrenId.get(i));
-				newChild.put("label", originalChildren.get(i));
+				//treekey로 obj_id 값 넣어주기(null 처리)
+				if(originalChildrenId.get(i) !="null") {
+					newChild.put("id",originalChildrenId.get(i));
+					newChild.put("label", originalChildren.get(i));
+				}
 				// 노드 Map값 List로 만들기
 				newChildren.add(newChild);
 			}
 			//노드값List를 내려줄 List에 Map으로 넣어주기 
-			changedMap.put("children", newChildren);
+				changedMap.put("children", newChildren);
 			//위에서 넣어준 (그룹Map값)+(노드의 List형식의 Map값)을 최종 내려줄 List에 넣어주기
 			changedList.add(changedMap);
         }
-        // 결과 출력
-        //System.out.println("최종값 : " +changedList);
 		return changedList;
 	}
-	
-	//카드 데이터 가져오기
-	public List<Map<String, Object>> getCardData(HashMap<String, Object> paraMap) {		
+	/**
+     * root&group의 카드 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 14.
+     */
+	public List<Map<String, Object>> getCardData(Map<String, Object> paraMap) {	
+		//숫자인지 문자인지(장비 obj_id가 넘어왔는지 확인)
+    	boolean isNumeric = ((CharSequence) paraMap.get("id")).chars().allMatch( Character::isDigit );;
+    	paraMap.put("isNumeric", isNumeric);
+    	//그룹 명일때만
+    	if(!isNumeric && !("root".equals(paraMap.get("id"))) ) {
+    		String intStr = getNumber(paraMap);
+    		paraMap.put("id", intStr);
+    	}
+		
 		return mapper.getCardData(paraMap);
 	}
+	
+	/**
+     * 노드 장비 카드정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 14.
+     */
+	public Object getDeviceData(Map<String, Object> paraMap) {
+		Optional<DeviceVO> devo = Optional.ofNullable(mapper.getDeviceData(paraMap));
+		if(devo.isPresent()) {
+			return devo.get();
+		}
+		else {
+			return devo;
+		}
+	}
 
-	//이벤트 목록 조회
+	  /**
+     * 이벤트 테이블 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public List<Map<String, Object>>getEvnetList(Map<String, Object> paraMap) {
-		paraMap.put("detail","1");
+		//이벤트 목록인지 이벤트 상세보기인지
+		paraMap.put("eventListOReventDetail","eventList");
+		//start,endron 계산
+		calPageNum(paraMap);
+		//숫자인지 문자인지(장비 obj_id가 넘어왔는지 확인)
+    	boolean isNumeric = ((CharSequence) paraMap.get("id")).chars().allMatch( Character::isDigit );;
+    	paraMap.put("isNumeric", isNumeric);
+    	if(!isNumeric && !("root".equals(paraMap.get("id")))&& !("chartDetail".equals(paraMap.get("id")))) {
+    		String intStr = getNumber(paraMap);
+    		paraMap.put("id", intStr);
+    	}
 		
 		if(paraMap.get("objNameList") != "") {
     		List<Object> objList = Arrays.asList(String.valueOf(paraMap.get("objNameList")).split(",")); 
     		paraMap.put("objList",objList);
     	}
+		//total 구하기
+		getPageNum(paraMap);
 		return mapper.getEventList(paraMap);
-		
 	}
 	
-	//차트 데이터 조회
+	   
+    /**
+     * 이벤트 성능 상세정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
+	public List<Map<String, Object>> getCardDetail(Map<String, Object> paraMap) {
+		//이벤트 목록인지 이벤트 상세보기인지
+		paraMap.put("eventListOReventDetail","eventDetail");
+		boolean isNumeric = ((CharSequence) paraMap.get("id")).chars().allMatch( Character::isDigit );
+    	paraMap.put("isNumeric", isNumeric);
+		return  mapper.getEventList(paraMap);
+	}
+	
+    /**
+     * 차트 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public Map<String, Object> getChartData(Map<String, Object> paraMap) throws ParseException {
+		//숫자인지 문자인지(장비 obj_id가 넘어왔는지 확인)
+    	boolean isNumeric = ((CharSequence) paraMap.get("id")).chars().allMatch( Character::isDigit );;
+    	paraMap.put("isNumeric", isNumeric);
+    	if(!isNumeric && !("root".equals(paraMap.get("id"))) && !("chartDetail".equals(paraMap.get("id")))) {
+    		String intStr = String.valueOf(getNumber(paraMap));
+    		paraMap.put("id", intStr);
+    	}
 		
 		Map<String,Object> dateMap = new HashMap<>();
+		
 		//날짜 계산하기
-		if(paraMap.get("value")=="" || paraMap.get("value2")=="") {
+		if(""==paraMap.get("startDate") || ""==paraMap.get("endDate")) {
 			paraMap.put("selectDate","0");
 			
 		}
@@ -117,7 +198,6 @@ public class EventService
 		}
 
 		//차트 데이터 조회
-		
 		List<Map<String, Object>> originalList = mapper.getChartData(paraMap);
 		ArrayList<Object> chartList = new ArrayList<Object>();
 		ArrayList<Object> categoryList = new ArrayList<Object>();
@@ -126,31 +206,37 @@ public class EventService
 			chartList.add((Object)(originalMap.get("COUNT")));
 		}
 		//리스트 Map에 담기
-		Map<String,Object> changedMap= new HashMap();
-		changedMap.put("chartList", chartList);
-		changedMap.put("categoryList", categoryList);
-
-		System.out.println("chartList" + changedMap.toString());
+		Map<String,Object> changedMap= new HashMap<String, Object>();
+		if(chartList != null && categoryList != null) {
+			changedMap.put("chartList", chartList);
+			changedMap.put("categoryList", categoryList);
+		}
 		
 		return changedMap ;
 	}
 	
-	//날짜 계산하기
+    /**
+     * 차트 날짜를 계산한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public Map<String, Object> calData(Map<String, Object> paraMap) throws ParseException {
 		 Map<String,Object> dateMap = new HashMap<>(); 
 		
 		 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 		 
 		 //date로 변환
-		 String date1 = String.valueOf(paraMap.get("value"));
+		 String date1 = String.valueOf(paraMap.get("startDate"));
 		 Date format1 = dateFormat.parse(date1);
-		 String date2 = String.valueOf(paraMap.get("value2"));
+		 String date2 = String.valueOf(paraMap.get("endDate"));
 		 Date format2 = dateFormat.parse(date2);
 
 		 long diffHor = (format2.getTime() - format1.getTime()) / 3600000; //시 차이
 		
 		 //장비 디테일 차트
-		 if(paraMap.get("id").equals("chartDetail")) {
+		 if("true".equals(paraMap.get("chartDetail"))){
 			 dateMap.put("selectDate","1");
 		 }
 		//일반 차트 경우의 수 나누기 (1시간이내/1시간~2일이내/2일이상)
@@ -188,57 +274,83 @@ public class EventService
 		 return dateMap;
 	}
 	
-
-	//페이징
-	public HashMap<String, Integer> getPageNum(Map<String, Object> paraMap) {
+    /**
+     * 페이징 rownum을 계산한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
+	public void calPageNum(Map<String,Object> paraMap) {
 		
 		int currentShowPageNo = 1;
 		if(paraMap.get("currentPage") != null) {
-			currentShowPageNo = Integer.parseInt((String) paraMap.get("currentPage"));
+			currentShowPageNo = Integer.parseInt(String.valueOf(paraMap.get("currentPage")));
 		}
 		int sizePerPage =25;
 		if(paraMap.get("sizePerPage") != null) {
-			sizePerPage = Integer.parseInt((String) paraMap.get("sizePerPage"));// 한페이지당 보여줄 게시물 건수
+			sizePerPage = Integer.parseInt(String.valueOf(paraMap.get("sizePerPage")));// 한페이지당 보여줄 게시물 건수
 		}
 		int startRno = ((currentShowPageNo) - 1)*sizePerPage +1;
 		int endRno = startRno + sizePerPage - 1 ;
 		
-		HashMap<String, Integer> pageMap = new HashMap<String, Integer>();
-		pageMap.put("startRno", startRno);
-		pageMap.put("endRno", endRno);
+		paraMap.put("startRno",startRno);
+    	paraMap.put("endRno",endRno);
 		
+	}
+
+    /**
+     * total 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
+	public void getPageNum(Map<String, Object> paraMap) {
 		//totlaPage 조회
 		if(paraMap.get("objNameList") != "") {
     		List<Object> objList = Arrays.asList(String.valueOf(paraMap.get("objNameList")).split(",")); 
     		paraMap.put("objList",objList);
     	}
 		int totalPageNum = mapper.getTotalPage(paraMap);
-		pageMap.put("totalPageNum",totalPageNum);
-		return pageMap;
+
+		paraMap.put("totalPageNum",totalPageNum);
 	}
 
 	public List<Map<String, Object>> getEventGrade() {
 		return mapper.getEventGrade();
 	}
 	
-	//이벤트 장비 상세정보
-	public List<Map<String, Object>> getCardDetail(Map<String, Object> paraMap) {
-		paraMap.put("detail","2");
-		return  mapper.getEventList(paraMap);
-	}
-	
-	//그룹 조회하기
+    /**
+     * 관리 그룹 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public List<Map<String, Object>> getGroupData() {
 		return mapper.getGroupData();
 	}
 
-	//그룹 추가하기
+    /**
+     * 관리 그룹을 추가한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int addGroup(Map<String, Object> paraMap) {
 		
 		return mapper.addGroup(paraMap);
 	}
 
-	//그룹 삭제하기
+    /**
+     * 관리 그룹을 삭제한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int deletGroup(Map<String, Object> paraMap) {
 		List<Object> deleteList= Arrays.asList(String.valueOf(paraMap.get("selectArray")).split(","));
 		paraMap.put("deleteList",deleteList);
@@ -246,24 +358,42 @@ public class EventService
 		return mapper.deletGroup(paraMap);
 	}
 
-	//그룹 수정
+    /**
+     * 관리 그룹을 수정한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int modifyGroup(Map<String, Object> paraMap) {
 		
 		return mapper.modifyGroup(paraMap);
 	}
-
-	// 그룹 관리 장비 조회
+    /**
+     * 그룹별 관리 장비 정보를 반환한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public List<Map<String, Object>> getGroupDevice(Map<String, Object> paraMap) {
 		
 		return mapper.getGroupDevice(paraMap);
 	}
+	
 
-	//장비 그룹 변경
+    /**
+     * 장비의 관리그룹을 변경한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	@Transactional
 	public int editGroupOfDevice(Map<String, Object> paraMap) {
-		int n = 0;
+		int successCount = 0;
 		int maxIndex = 0;
-    	if(paraMap.get("insertList") != "") {
+    	if(!("".equals(paraMap.get("insertList")))) {
     		List<Object> insertList = Arrays.asList(String.valueOf(paraMap.get("insertList")).split(","));
     		//다중 insert
     		for( Object objId : insertList) {
@@ -271,27 +401,32 @@ public class EventService
     			maxIndex = mapper.findMaxIndex();
         		paraMap.put("orderbyIndex", maxIndex+1);
     			paraMap.put("objId", objId); 
-    			n += mapper.addGroupOfDevice(paraMap);
+    			successCount  += mapper.addGroupOfDevice(paraMap);
     		}
     	}
-    	if(paraMap.get("deleteList") != "") {
+    	if(!("".equals(paraMap.get("deleteList")))) {
     		List<Object> deleteList = Arrays.asList(String.valueOf(paraMap.get("deleteList")).split(","));   		
     		//다중 delete
     		for( Object objId : deleteList) {;
     			paraMap.put("objId", objId);
-    			n +=mapper.delteGroupOfDevice(paraMap);
+    			successCount  +=mapper.delteGroupOfDevice(paraMap);
     		}
     	}
-		return n;
+		return successCount;
 	}
 	
-
-
-
-
-
-
-
+    /**
+     * treekey 정보에서 숫자만 추출한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
+	public String getNumber(Map<String, Object> paraMap) {
+		String id = String.valueOf(paraMap.get("id"));
+		String intStr =id.replaceAll("[^\\d]", "");
+		return intStr;
+	}
 	
 	
 }

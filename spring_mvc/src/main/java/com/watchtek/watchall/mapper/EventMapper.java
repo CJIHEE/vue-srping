@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.watchtek.watchall.vo.DeviceVO;
+
 /**
  * 이벤트 매퍼
  *
@@ -22,46 +24,144 @@ public interface EventMapper
      */
     public List<Map<String, Object>> getEventLevels();
 
-    //트리정보 조회
+    /**
+     * 트리 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 14.
+     */
 	public List<Map<String, Object>> getTreeData();
 
-	//카드 데이터 조회
-	public List<Map<String, Object>> getCardData(HashMap<String, Object> paraMap);
+	/**
+     * 장비 카드 정보를 반환한다.
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 14.
+     */
+	public List<Map<String, Object>> getCardData(Map<String, Object> paraMap);
 
-	//이벤트 목록 조회
+	 /**
+     * 노드 장비 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 14.
+     */
 	public List<Map<String, Object>> getEventList(Map<String, Object> paraMap);
 
-	//총 페이지 알아오기
+	/**
+     * 이벤트 테이블 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int getTotalPage(Map<String, Object> paraMap);
 
-	//이벤트 등급 조회
+	/**
+     * 이벤트 성능 상세정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public List<Map<String, Object>> getEventGrade();
 	
-	//차트 데이터 조회
+	 /**
+     * 차트 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public List<Map<String, Object>> getChartData(Map<String, Object> paraMap);
 
-	//이벤트 성능 상세 정보 조회
+	 /**
+	  * 이벤트 성능 상세정보를 반환한다. 
+	  *
+	  * @return
+	  * @author JIHEE
+	  * @create-date : 2023. 3. 15.
+	  */
 	public List<Map<String, Object>> getCardDetail(Map<String, Object> paraMap);
 	
-	//그룹 정보 조회
+	/**
+     * 관리 그룹 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public List<Map<String, Object>> getGroupData();
 
-	//그룹 추가하기
+	/**
+     * 관리 그룹을 추가한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int addGroup(Map<String, Object> paraMap);
 
-	//그룹 삭제하기
+	/**
+     * 관리 그룹을 삭제한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int deletGroup(Map<String, Object> paraMap);
 
-	//그룹 수정하기
+	/**
+     * 관리 그룹을 수정한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int modifyGroup(Map<String, Object> paraMap);
 
-	//그룹 관리 대상 조회하기
+	/**
+     * 그룹별 관리 장비 정보를 반환한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public List<Map<String, Object>> getGroupDevice(Map<String, Object> paraMap);
 
-	//장비 그룹 추가
+	 /**
+     * 장비의 관리그룹을 변경한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int addGroupOfDevice(Map<String, Object> paraMap);
-	//장비 그룹 삭제
+	 /**
+     * 장비의 관리그룹을 삭제한다
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int delteGroupOfDevice(Map<String, Object> paraMap);
-	//인덱스 최대값 가져오기
+	 /**
+     * 그룹의 관리장비의 인덱스 최대값을 반환한다.
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 15.
+     */
 	public int findMaxIndex();
+	/**
+     * 노드 장비 정보를 반환한다. 
+     *
+     * @return
+     * @author JIHEE
+     * @create-date : 2023. 3. 14.
+     */
+	public DeviceVO getDeviceData(Map<String, Object> paraMap);
 }
