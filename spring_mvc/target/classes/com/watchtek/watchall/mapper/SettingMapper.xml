@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.watchtek.watchall.mapper.SettingMapper">
+
+	<resultMap type="HashMap" id="groupListlMap">
+	   	   <result property="managegroupId"    	 column="managegroup_id"      	javaType="String"/>
+	   	   <result property="managegroupName"    column="managegroup_name"  	javaType="String"/>
+	   	   <result property="orderbyIndex"       column="orderby_index"      	javaType="int"/>
+	</resultMap> 
+		
+		<!-- 그룹 조회하기 -->
+			<select id="getGroupData"  resultMap="groupListlMap">
+				SELECT 
+					managegroup_id,managegroup_name, orderby_index
+				FROM 
+					managegrp 
+			</select>
+			
+		<!-- 그룹 추가하기 -->	
+			<insert id="addGroup" parameterType="HashMap">
+				INSERT INTO 
+					managegrp (managegroup_id, managegroup_name,orderby_index)
+				VALUES
+					(#{orderbyIndex}, #{managegroupName}, #{orderbyIndex})
+			</insert>
+		<!-- 그룹 삭제 -->
+			<delete id="deletGroup" parameterType="HashMap">
+				DELETE FROM  
+					managegrp  
+				WHERE 
+					orderby_index in 
+					 <foreach collection="deleteList" item="item" index="index" separator="," open="(" close=")">
+				       #{item}
+				     </foreach>
+			</delete>
+		<!-- 그룹 수정 -->	
+			<update id="modifyGroup" parameterType="HashMap">
+				UPDATE 
+					managegrp 
+				SET 
+					managegroup_name = #{managegroupName}
+				WHERE 
+					orderby_index = #{orderbyIndex}
+			</update>
+			
+		<resultMap type="HashMap" id="GroupDeviceListlMap">
+	   	   <result property="managegroupId"    	 column="managegroup_id"      	javaType="String"/>
+	   	   <result property="objName"     		 column="obj_name"  			javaType="String"/>
+	   	   <result property="objtypeName"        column="objtype_name"      	javaType="String"/>
+	   	   <result property="managegroupName"    column="managegroup_name"      javaType="String"/>
+	   	   <result property="objId"       		 column="obj_id"      			javaType="String"/>
+		</resultMap> 
+			
+			<!-- 그룹 관리 장비 조회 -->
+			<select id="getGroupDevice" resultMap="GroupDeviceListlMap">
+				SELECT 
+					obj_name, objtype_name,managegroup_name, GROUP_CONCAT(managegroup_id SEPARATOR ',') AS managegroup_id, mm.obj_id
+				FROM
+					obj o
+				INNER JOIN 	
+					objtype oj ON o.objtype_id = oj.objtype_id
+				INNER JOIN
+					(
+					SELECT 
+						m.managegroup_id, managegroup_name , mo.obj_id
+					FROM 
+						managegrp m
+					LEFT JOIN 
+						managegrp_obj mo ON m.managegroup_id = mo.managegroup_id	
+					)mm ON o.obj_id = mm.obj_id
+				<if test="searchWord != ''">
+					WHERE 	
+						obj_name LIKE'%${searchWord}%'
+				</if>	
+				GROUP BY mm.obj_id						
+			</select>
+			
+			<!-- 인덱스 최대값 -->
+			<select id="findMaxIndex" resultType="int">
+				SELECT 
+					MAX(orderby_index)
+				FROM 
+					managegrp_obj
+			</select>
+			
+			<!-- 관리 장비 그룹 추가 -->
+			<insert id="addGroupOfDevice" parameterType="HashMap">
+				INSERT INTO 
+					managegrp_obj (managegroup_id, obj_id,orderby_index)
+				VALUES
+					(#{managegroupId}, #{objId}, #{orderbyIndex});
+			</insert>
+			
+			<!-- 관리장비 그룹 삭제 -->
+			<delete id="delteGroupOfDevice" parameterType="HashMap">
+				DELETE FROM  
+					managegrp_obj 
+				WHERE 
+					managegroup_id=#{managegroupId} AND obj_id=#{objId}
+			</delete>
+			
+
+					
+</mapper>

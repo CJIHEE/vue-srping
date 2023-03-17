@@ -43,9 +43,16 @@
 		<property name="mapperLocations" value="classpath:com/watchtek/watchall/mapper/*.xml"></property>
 	</bean>
 	
+	
 	<!-- Mapper 등록 -->
 	<bean id="eventMapper" class="org.mybatis.spring.mapper.MapperFactoryBean" >
 	  <property name="mapperInterface" value="com.watchtek.watchall.mapper.EventMapper" />
+	  <property name="sqlSessionFactory" ref="sqlSessionFactory" />
+	</bean>
+	
+	<!-- Mapper 등록 -->
+	<bean id="settingMapper" class="org.mybatis.spring.mapper.MapperFactoryBean" >
+	  <property name="mapperInterface" value="com.watchtek.watchall.mapper.SettingMapper" />
 	  <property name="sqlSessionFactory" ref="sqlSessionFactory" />
 	</bean>
 	
