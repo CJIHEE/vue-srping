@@ -1,156 +1,145 @@
 <template>
-    <div>
-        <div class="chart">
-            <div class="block">
-                <el-date-picker
-                v-model="value2"
-                type="datetime"
-                placeholder="Select date and time"
-                style="margin : 25px 5px;">
-                </el-date-picker>
-                <el-date-picker
-                v-model="value3"
-                type="datetime"
-                placeholder="Select date and time"
-                :disabled="disabledDate"
-                >
-                </el-date-picker>
-            </div>
-            <highcharts :options ="chartOptions "/>   
-        </div>
+  <div>
+    <div class="chart">
+      <div class="block">
+        <el-date-picker
+          v-model="startDate"
+          type="datetime"
+          placeholder="Select date and time"
+          style="margin : 25px 5px;"
+        />
+        <el-date-picker
+          v-model="endDate"
+          type="datetime"
+          placeholder="Select date and time"
+          :disabled="disabledDate"
+        />
+      </div>
     </div>
+    <div>
+      <commonChart
+        :id="id"
+        ref="chartDetail"
+      />
+    </div>
+  </div>
 </template>
 <script>
+/**
+ * ? REVIEW:
+ * 코드 인덴트 확인
+ * lint rule은 항상 확인 후 모두 처리
+ * 컴포넌트, 인스턴스 옵션 순서 일관성있고 정렬되게 선언
+ * !! 변수 반드시 의미있게 작성해주세요 (startDate, value3이 뭔지 다른사람은 모릅니다)
+ * !! chart와 중복된 코드는 재사용성을 위해 붆리하도록
+ */
+import dayjs from 'dayjs';
+import EventApi from '@/api/event';
+import commonChart from './CommonChart';
 
-import dayjs from 'dayjs'
-export default{
-    name : 'charList',
-    props : ['deviceDetailName'],
-    watch :{
-        id(){
-            this.getCharList();
-            this.value2 ='',
-            this.value3=''
-        },
-        value2(){
-            this.checkDate();
-        },
-        value3(){
-            this.checkDate();
-        }
+export default {
+  name: 'CharDetailList',
+  components: { commonChart },
+  props: {
+    deviceDetailName: {
+      type: String,
+      default: '',
     },
-    data() {
-        return {
-            chartList:[],
-            chartList2:[1,23,4,5,6,],
-            categorytyList:[],
-            chartOptions : {
-                title: {
-                    text: '성능추이',
-                    
-                },
-                xAxis: {
-                    categories: this.categoryList,
-                    label : {
-                        fommatter:function(){
-                            return this.value + '%';
-                        }
-                    },
-
-                },
-                yAxis: {
-                    title: {
-                    text: ''
-                    },
-                    label : {
-                        fommatter:function(){
-                            return this.value + '%';
-                        }
-                    },
-                    plotLines: [{
-                    value: 0,
-                    width: 1,
-                    color: '#808080'
-                    }]
-                },
-                tooltip: {
-                    valueSuffix: ''
-                },
-                series: [ ]
-
-            },
-            value2 : '2023-02-22T15:00:00.000Z',
-            value3 : '2023-02-23T15:00:00.000Z',
-            rndChartArray : [],
-            rndChartArray2 : [],
-            disabledDate : false,
-        }
-    }, 
-    created() {
-        this.getCharList();
+    id: {
+      type: [String, Number],
+      default: 'root',
     },
-    methods: {
-        checkDate(){
-            let startDay = dayjs(this.value2).format("YYYY-MM-DD HH:mm:ss");
-            let endDay =dayjs(this.value3).format("YYYY-MM-DD HH:mm:ss");
-            if(startDay > endDay) {
-                this.disabledDate = true;
-                alert(startDay+"보다 이전 일자는 검색할 수 없습니다");
-            }
-            else {
-                this.disabledDate = false;
-                this.getCharList();
-            }
-        },
-        getCharList(){
-            this.$axios.get('app/event/get-chart-data.do', { params: { id: 'chartDetail' , value : this.value2 , value2: this.value3 }})
-            .then(response => {
-                this.categoryList = response.data.data.categoryList;
-                    //난수 발생
-                    this.creatRandomNumber();
-                    //데이터 set
-                    this.setData();
-            })
-            .catch((ex) => {
-              console.log(ex);
-            })
-        },
-        //난수 발생
-        creatRandomNumber(){
-            this.rndChartArray = [];
-                    for(var i=0; i <this.categoryList.length; i++){
-                        let rnd = Math.floor(Math.random() * 101);
-                        const rndArray = [];
-                        rndArray.push(this.categoryList[i]);
-                        rndArray.push(rnd);
-                        this.rndChartArray.push(rndArray);
-                    }
-            this.rndChartArray2 = [];
-            for(var i=0; i <this.categoryList.length; i++){
-                let rnd = Math.floor(Math.random() * 101);
-                const rndArray2 = [];
-                rndArray2.push(this.categoryList[i]);
-                rndArray2.push(rnd);
-                this.rndChartArray2.push(rndArray2);
-            }
-        },
-        setData(){
-            //데이터 초기화
-            this.chartOptions.series =[];
-            //데이터 set
-            this.chartOptions.xAxis.categories =this.categoryList;
-            this.chartOptions.series.push({name : '난수 데이터1' , data :this.rndChartArray});
-            this.chartOptions.series.push({name : '난수 데이터2' , color:'green' ,data :this.rndChartArray2});
-        }
-    },  
-}
+    drawer: {
+      type: [Boolean],
+      required: true,
+    },
+  },
+  data() {
+    return {
+      chartList: [],
+      categorytyList: [],
+      startDate: '2023-02-22T15:00:00.000Z',
+      endDate: '2023-02-23T15:00:00.000Z',
+      rndChartArray: [],
+      rndChartArray2: [],
+      disabledDate: false,
+      categoryList: [],
+    };
+  },
+  watch: {
+    drawer() {
+      this.loadCharList();
+      this.startDate = '2023-02-22T15:00:00.000Z';
+      this.endDate = '2023-02-23T15:00:00.000Z';
+    },
+    startDate() {
+      this.checkDate();
+    },
+    endDate() {
+      this.checkDate();
+    },
+  },
+  created() {
+    this.loadCharList();
+  },
+  methods: {
+    checkDate() {
+      const startDay = dayjs(this.startDate).format('YYYY-MM-DD HH:mm:ss');
+      const endDay = dayjs(this.endDate).format('YYYY-MM-DD HH:mm:ss');
+      if (startDay > endDay) {
+        this.disabledDate = true;
+        this.$message({
+          message: `${startDay} 보다 이전 일자는 검색할 수 없습니다.`,
+          type: 'error',
+        });
+      } else {
+        this.disabledDate = false;
+        this.loadCharList();
+      }
+    },
+    loadCharList() {
+      const params = { id: 1, startDate: this.startDate, endDate: this.endDate, chartDetail: 'true' };
+      EventApi.getChartList(params)
+        .then((response) => {
+          this.categoryList = response.data.data.categoryList;
+          //난수 발생
+          this.creatRandomNumber();
+          //데이터 set
+          const chartTitle = '성능 추이';
+          this.$refs.chartDetail.setChartDetailData(this.categoryList, this.rndChartArray, this.rndChartArray2, chartTitle);
+        })
+        .catch((ex) => {
+          console.log(ex);
+        });
+    },
+    //난수 발생
+    creatRandomNumber() {
+      this.rndChartArray = [];
+      this.categoryList.forEach((categoriesValue) => {
+        let rnd = Math.floor(Math.random() * 101);
+        const rndArray = [];
+        rndArray.push(categoriesValue);
+        rndArray.push(rnd);
+        this.rndChartArray.push(rndArray);
+      });
+      this.rndChartArray2 = [];
+      this.categoryList.forEach((categoriesValue) => {
+        let rnd = Math.floor(Math.random() * 101);
+        const rndArray2 = [];
+        rndArray2.push(categoriesValue);
+        rndArray2.push(rnd);
+        this.rndChartArray2.push(rndArray2);
+      });
+    },
+  },
+};
 </script>
 
 <style scoped>
 .title {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
-.chart{
-    text-align: center;
+.chart {
+  text-align: center;
 }
 </style>

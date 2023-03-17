@@ -1,130 +1,141 @@
 <template>
-    <div>
-        <div class="chart">
-            <div class="block">
-                <el-date-picker
-                v-model="value2"
-                type="datetime"
-                placeholder="Select date and time"
-                style="margin-right: 10px;">
-                </el-date-picker>
-                <el-date-picker
-                v-model="value3"
-                type="datetime"
-                placeholder="Select date and time"
-                :disabled="disabledDate"
-                >
-                </el-date-picker>
-            </div>
-            <highcharts :options ="chartOptions"/>
-        </div>
+  <div>
+    <div class="chart">
+      <div class="block">
+        <el-date-picker
+          v-model="startDate"
+          type="datetime"
+          placeholder="Select date and time"
+          style="margin-right: 10px;"
+        />
+        <el-date-picker
+          v-model="endDate"
+          type="datetime"
+          placeholder="Select date and time"
+          :disabled="disabledDate"
+        />
+      </div>
     </div>
+    <div>
+      <commonChart
+        :id="id"
+        ref="chart"
+      />
+    </div>
+  </div>
 </template>
 
+
 <script>
-import dayjs from 'dayjs'
-export default{
-    name : 'charList',
-    props : ['id'],
-    //props 데이터 변경 감지
-    watch :{
-        id:{
-            handler: function(){
-                if(this.id === '4'){
-                this.value2 = '2023-02-16T15:00:00.000Z';
-                this.value3 = '2023-02-22T15:00:00.000Z';
-                }
-                else{
-                this.value2 ='2023-02-21T15:00:00.000Z',
-                this.value3='2023-02-27T15:00:00.000Z'
-                }
-                this.getCharList();
-            },
-            immediate: true     
-        },
-        value2(){
-            this.checkDate();
-        },
-        value3(){
-            this.checkDate();
-        }
+import dayjs from 'dayjs';
+import EventApi from '@/api/event';
+import commonChart from './CommonChart';
+
+export default {
+  name: 'CharList',
+  components: { commonChart },
+  props: {
+    id: {
+      type: String,
+      required: true,
     },
-    data() {
-        return {
-            chartList:[],
-            categorytyList:[],
-            chartTitle: '이벤트 이력',
-            chartOptions : {
-                chart: {
-                    zoomType: 'x'
-                },
-                title: {
-                    text: '이벤트 이력',
-                    align: 'left'
-                },
-                xAxis:{
-                    categories: this.categoryList
-                },
-                yAxis: {
-                    title: {
-                        text: ''
-                    },
-                },
-                legend: {
-                    enabled: false
-                },
-                series: [{}]
-            },
-            value2 : '',
-            value3 : '',
-            testdate : '', 
-            disabledDate : false,
+  },
+  data() {
+    return {
+      chartList: [],
+      categorytyList: [],
+      startDate: '',
+      endDate: '',
+      testdate: '',
+      disabledDate: false,
+      chartData: [],
+      check: 'chart',
+    };
+  },
+  watch: {
+    id: {
+      handler() {
+        if (this.id === '4') {
+          this.startDate = '2023-02-16T15:00:00.000Z';
+          this.endDate = '2023-02-22T15:00:00.000Z';
+        } else {
+          (this.startDate = '2023-02-21T15:00:00.000Z'), (this.endDate = '2023-02-27T15:00:00.000Z');
         }
-    },  
-    methods: {
-        getCharList(){
-            this.$axios.get('app/event/get-chart-data.do', { params: { id: this.id , value : this.value2 , value2: this.value3 }})
-            .then(response => {
-                this.chartList = response.data.data.chartList;
-                this.categoryList = response.data.data.categoryList;
-                this.setChartData();
-            })
-            .catch((ex) => {
-              console.log(ex);
-            })
-        }, 
-        checkDate(){           
-            let startDay = dayjs(this.value2).format("YYYY-MM-DD HH:mm:ss");
-            let endDay =dayjs(this.value3).format("YYYY-MM-DD HH:mm:ss");
-            if(startDay > endDay) {
-                this.disabledDate = true;
-                alert(startDay+"보다 이전 일자는 검색할 수 없습니다");
+        this.getCharttList();
+      },
+      immediate: true,
+    },
+    startDate() {
+      this.checkDate();
+    },
+    endDate() {
+      this.checkDate();
+    },
+  },
+  methods: {
+    getCharttList() {
+      const params = { id: this.id, startDate: this.startDate, endDate: this.endDate };
+      EventApi.getChartList(params)
+        .then((response) => {
+          if (response.data.success === true) {
+            if (response.data.data.chartList.length > 0) {
+              this.chartList = response.data.data.chartList;
+              this.categoryList = response.data.data.categoryList;
+              this.setChartData();
+              const chartTitle = '이벤트 이력';
+              this.$refs.chart.setChartData(this.categoryList, this.chartData, chartTitle);
+            } else {
+              this.chartList = [];
+              this.categorytyList = [];
+              this.setChartData();
             }
-            else {
-                this.disabledDate = false;
-                this.getCharList();
-            }
-        },
-        setChartData(){
-            //데이터 초기화
-            const ChartData = [];
-            this.chartOptions.series =[];
-            //데이터 set
-            this.chartOptions.xAxis.categories =this.categoryList;
-            for(var i=0; i <this.chartList.length; i++){
-                ChartData.push(this.chartList[i]);
-            }
-            this.chartOptions.series.push({color:'rgb(161, 120, 161)',type:'area' , data : ChartData });
-        }
-    },  
-}
+          } else {
+            this.$message({
+              message: '데이터 전송이 실패했습니다',
+              type: 'error',
+            });
+          }
+        })
+        .catch((e) => {
+          this.$message({
+            message: '차트를 조회하지 못했습니다',
+            type: 'error',
+          });
+          throw new Error(e);
+        });
+    },
+    checkDate() {
+      const startDay = dayjs(this.startDate).format('YYYY-MM-DD HH:mm:ss');
+      const endDay = dayjs(this.endDate).format('YYYY-MM-DD HH:mm:ss');
+      if (startDay > endDay) {
+        this.disabledDate = true;
+        this.$message({
+          message: `${startDay} 보다 이전 일자는 검색할 수 없습니다.`,
+          type: 'error',
+        });
+      } else {
+        this.disabledDate = false;
+        this.getCharttList();
+      }
+    },
+    setChartData() {
+      //데이터 초기화
+      this.chartData = [];
+      //차트데이터 만들기
+      this.chartList.forEach((chartValue) => {
+        this.chartData.push(chartValue);
+      });
+    },
+  },
+};
 </script>
+
 
 <style scoped>
 .title {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
-.chart{
-    text-align: center;
+.chart {
+  text-align: center;
 }
 </style>
