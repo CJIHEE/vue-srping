@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.watchtek.watchall.mapper.EventMapper">
+
+	<select id="getEventLevels" resultType="java.util.Map">
+		SELECT
+			eventlevel_id AS eventlevelId,
+			eventlevel_name AS eventlevelName,
+			eventlevel_color_bg AS eventlevelColorBg,
+			eventlevel_color_text AS eventlevelColorText,
+			orderby_index AS orderbyIndex
+		FROM
+			eventlevel
+		ORDER BY
+			orderby_index ASC
+	</select>
+	
+	<!-- 트리구조 데이터 -->
+	<select id="getTreeData" resultType="java.util.Map">
+			
+			SELECT 
+				m.managegroup_id, managegroup_name AS label, GROUP_CONCAT(o.obj_name SEPARATOR ',') AS Node , GROUP_CONCAT(o.obj_id SEPARATOR ',') AS obj_id
+			FROM 
+				managegrp m
+			LEFT JOIN 
+				managegrp_obj mo ON m.managegroup_id = mo.managegroup_id
+			LEFT JOIN 
+				obj o ON mo.obj_id = o.obj_id
+			GROUP BY 
+				label
+
+	</select>
+	
+	<!-- 카드 데이터 -->
+	<select id="getCardData" resultType="java.util.Map" parameterType="HashMap">
+			<if test = "isNumeric == false">
+			SELECT 
+				obj_define_name, COUNT(*) AS count
+			FROM 
+				obj_define od
+			INNER JOIN 
+				obj o ON o.obj_define_id = od.obj_define_id	
+			INNER JOIN
+				(
+				SELECT 
+					m.managegroup_id, managegroup_name, obj_id
+				FROM 
+					managegrp m
+				INNER JOIN 
+					managegrp_obj mo ON m.managegroup_id = mo.managegroup_id		
+				)mm ON o.obj_id = mm.obj_id
+				<if test="id != 'root'">
+				WHERE managegroup_name = #{id}	
+				</if>
+			GROUP BY o.obj_define_id	
+			</if>
+			
+			<if test="isNumeric == true">
+			SELECT 
+				 o.obj_name, mm.obj_id, ot.objtype_name, obj_define_name, IFNULL(o.ipaddress_ipv4, '-') AS ipaddress_ipv4,IFNULL(o.obj_product_id,'-')AS obj_product_id ,mm.managegroup_name, ot.objtype_name ,co.obj_company_name
+			FROM 
+				obj_define od
+			INNER JOIN 
+				obj o ON o.obj_define_id = od.obj_define_id	
+			INNER JOIN
+				obj_company co ON o.obj_company_id = co.obj_company_id	
+			INNER JOIN
+				objtype ot ON o.objtype_id = ot.objtype_id
+			INNER JOIN
+				(
+				SELECT 
+					m.managegroup_id, managegroup_name, obj_id
+				FROM 
+					managegrp m
+				INNER JOIN 
+					managegrp_obj mo ON m.managegroup_id = mo.managegroup_id	
+				GROUP BY
+					 mo.obj_id		
+				)mm ON o.obj_id = mm.obj_id
+			WHERE o.obj_id = #{id}
+			</if>
+	</select>
+	
+	<!-- 이벤트 목록 조회 -->
+	<select id="getEventList"  resultType="java.util.Map" parameterType="HashMap">
+		<if test="detail == 1">
+		SELECT
+		 	obj_define_name, obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message, managegroup_name, DATE_FORMAT(check_datetime, "%Y/%m/%d %k:%i:%S") AS check_datetime,rno
+		</if>
+		<if test="detail == 2">
+		SELECT
+		 	obj_define_name,obj_name,event_message,DATE_FORMAT(check_datetime, "%Y/%m/%d %k:%i:%S") AS check_datetime,rno
+		</if>
+		FROM
+			(
+			SELECT 
+				 obj_define_name,row_number() over(ORDER BY check_datetime DESC) AS rno, o.obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message,check_datetime,mm.managegroup_name
+			FROM 
+				obj_define od
+			INNER JOIN 
+				obj o ON o.obj_define_id = od.obj_define_id
+			INNER JOIN 
+				objtype ot ON o.objtype_id = ot.objtype_id	
+			INNER JOIN
+				(SELECT 
+					eventlevel_name, obj_id,rsc_name,event_message,check_datetime
+				FROM
+					eventlevel el
+				INNER JOIN
+					event_hist eh ON el.eventlevel_id = eh.eventlevel_id
+				)e ON o.obj_id = e.obj_id
+			INNER JOIN
+				obj_company oc ON o.obj_company_id = oc.obj_company_id	
+			INNER JOIN
+				(
+				SELECT 
+					m.managegroup_id, managegroup_name, obj_id
+				FROM 
+					managegrp m
+				INNER JOIN 
+					managegrp_obj mo ON m.managegroup_id = mo.managegroup_id
+				<if test="isNumeric == true">
+				GROUP BY
+					obj_id
+				</if>			
+				)mm ON o.obj_id = mm.obj_id	
+			WHERE	
+				<if test="id != 'root' and isNumeric == false">
+					mm.managegroup_name = #{id}	
+					<if test="objNameList != ''">
+						AND obj_define_name in
+						 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
+					      	 #{item}
+					     </foreach>
+					</if>
+				</if>
+				<if test="id == 'root'"> 
+					1=1	
+					<if test="objNameList != ''">
+						AND obj_define_name in
+						 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
+					      	 #{item}
+					     </foreach>
+					</if>
+				</if>
+				<if test="isNumeric == true">
+					O.obj_id = #{id}
+				</if>
+				<if test="value !=''">
+					AND eventlevel_name = #{value}
+				</if>	
+				<if test="searchWord !=''">
+					AND event_message LIKE'%${searchWord}%' 
+				</if>	
+				)A
+			<if test="detail == 1">
+			WHERE
+				rno BETWEEN #{startRno} AND #{endRno}	
+			</if>
+			<if test="detail == 2">
+			WHERE
+				rno = #{index}
+			</if>
+			ORDER BY check_datetime DESC
+	</select>
+	
+	<!-- 총 페이지수 알아오기 -->
+	<select id="getTotalPage" resultType="int" parameterType="HashMap">
+			SELECT 
+				Count(*)
+			FROM
+				(
+				SELECT 
+					 obj_define_name,row_number() over(ORDER BY check_datetime DESC) AS rno, o.obj_id, eventlevel_name, obj_name, objtype_name,obj_company_name,rsc_name,event_message,check_datetime,mm.managegroup_name
+				FROM 
+					obj_define od
+				INNER JOIN 
+					obj o ON o.obj_define_id = od.obj_define_id
+				INNER JOIN 
+					objtype ot ON o.objtype_id = ot.objtype_id	
+				INNER JOIN
+					(SELECT 
+						eventlevel_name, obj_id,rsc_name,event_message,check_datetime
+					FROM
+						eventlevel el
+					INNER JOIN
+						event_hist eh ON el.eventlevel_id = eh.eventlevel_id
+					)e ON o.obj_id = e.obj_id
+				INNER JOIN
+					obj_company oc ON o.obj_company_id = oc.obj_company_id	
+				INNER JOIN
+					(
+					SELECT 
+						m.managegroup_id, managegroup_name, obj_id
+					FROM 
+						managegrp m
+					INNER JOIN 
+						managegrp_obj mo ON m.managegroup_id = mo.managegroup_id
+					<if test="isNumeric == true">
+					GROUP BY
+						obj_id
+					</if>		
+					)mm ON o.obj_id = mm.obj_id	
+				)A
+				WHERE
+				<if test="id != 'root' and isNumeric == false">
+					A.managegroup_name = #{id}	
+					<if test="objNameList != ''">
+						AND obj_define_name in
+						 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
+					      	 #{item}
+					     </foreach>
+					</if>
+				</if>
+				<if test="id == 'root'"> 
+					1=1
+					<if test="objNameList != ''">
+						AND obj_define_name in
+					 <foreach collection="objList" item="item" index="index" separator="," open="(" close=")">
+				      	 #{item}
+				     </foreach>
+					</if>	
+				</if>
+				<if test="isNumeric == true">
+					obj_id = #{id}
+				</if>	
+				<if test="value !=''">
+					AND eventlevel_name = #{value}
+				</if>
+				<if test="searchWord !=''">
+					AND event_message LIKE '%${searchWord}%' 
+				</if>
+		
+	</select>
+	
+	<select id="getEventGrade" resultType="java.util.Map">	
+		SELECT GROUP_CONCAT(eventlevel_name SEPARATOR ',') AS eventlevel_name
+		FROM eventlevel
+	</select>
+	
+	<!-- 차트 데이터 조회 -->
+		<select id="getChartData"  resultType="java.util.Map" parameterType="HashMap">
+			    <if test="selectDate == 0 || selectDate == 3">
+			    SELECT 
+					DATE_FORMAT(FLOOR(DATE(check_datetime)), "%Y/%m/%d") AS DATETIME ,COUNT(*) AS COUNT
+			    </if>
+			    <if test="selectDate == 1">
+			    SELECT 
+					DATE_FORMAT(check_datetime,"%Y-%m-%d %H:%i:%S") AS DATETIME ,COUNT(*) AS COUNT
+			    </if>
+				 <if test="selectDate == 2">
+			    SELECT 
+					CONCAT(DATE_FORMAT(check_datetime,'%Y-%m-%d'), ' ', HOUR(check_datetime),'시') AS DATETIME, COUNT(HOUR(check_datetime)) AS COUNT
+			    </if>
+				FROM 	
+					event_hist e
+				INNER JOIN 
+					obj o ON e.obj_id = o.obj_id 
+				INNER JOIN
+					(
+					SELECT 
+						m.managegroup_id, managegroup_name, obj_id
+					FROM 
+						managegrp m
+					INNER JOIN 
+						managegrp_obj mo ON m.managegroup_id = mo.managegroup_id	
+					<if test="isNumeric == true">
+					GROUP BY
+						obj_id
+					</if>
+					)mm ON o.obj_id = mm.obj_id	
+				<if test="id != 'chartDetail'"> 
+					<if test="id != 'root' and isNumeric == false">
+						WHERE managegroup_name = #{id}	
+					</if>
+					<if test="id == 'root'"> 
+						WHERE 1=1
+					</if>
+					<if test="isNumeric == true">
+						WHERE o.obj_id = #{id}
+					</if>
+				</if>	
+				<if test="selectDate == 0">
+					AND check_datetime BETWEEN DATE_ADD(NOW(), INTERVAL -1 WEEK ) AND NOW()
+				</if>
+				<if test="selectDate != 0">
+					AND check_datetime BETWEEN #{dateTime1} AND #{dateTime2}
+				</if>
+				<if test="selectDate == 0 || selectDate == 3">
+					GROUP BY 
+							FLOOR(DATE(check_datetime))
+				</if>
+				<if test="selectDate == 1">
+					GROUP BY 
+							SUBSTR(DATE_FORMAT(check_datetime,'%Y%m%d%H%i%S'),1,10), FLOOR(SUBSTR(DATE_FORMAT(check_datetime,'%Y%m%d%H%i%S'),11,2)/5)
+			    </if>
+				<if test="selectDate == 2">
+					GROUP
+						 BY DATETIME
+				</if>
+				ORDER BY check_datetime ASC
+		</select>
+		
+		<!-- 그룹 조회하기 -->
+			<select id="getGroupData"  resultType="java.util.Map">
+				SELECT 
+					managegroup_id,managegroup_name, orderby_index
+				FROM 
+					managegrp 
+			</select>
+			
+		<!-- 그룹 추가하기 -->	
+			<insert id="addGroup" parameterType="HashMap">
+				INSERT INTO 
+					managegrp (managegroup_id, managegroup_name,orderby_index)
+				VALUES
+					(#{orderby_index}, #{managegroup_name}, #{orderby_index})
+			</insert>
+		<!-- 그룹 삭제 -->
+			<delete id="deletGroup" parameterType="HashMap">
+				DELETE FROM  
+					managegrp  
+				WHERE 
+					orderby_index in 
+					 <foreach collection="deleteList" item="item" index="index" separator="," open="(" close=")">
+				       #{item}
+				     </foreach>
+			</delete>
+		<!-- 그룹 수정 -->	
+			<update id="modifyGroup" parameterType="HashMap">
+				UPDATE 
+					managegrp 
+				SET 
+					managegroup_name = #{managegroup_name}
+				WHERE 
+					orderby_index = #{orderby_index}
+			</update>
+			
+			<!-- 그룹 관리 장비 조회 -->
+			<select id="getGroupDevice" resultType="java.util.Map">
+				SELECT 
+					obj_name, objtype_name,managegroup_name, GROUP_CONCAT(managegroup_id SEPARATOR ',') AS managegroup_id, mm.obj_id
+				FROM
+					obj o
+				INNER JOIN 	
+					objtype oj ON o.objtype_id = oj.objtype_id
+				INNER JOIN
+					(
+					SELECT 
+						m.managegroup_id, managegroup_name , mo.obj_id
+					FROM 
+						managegrp m
+					LEFT JOIN 
+						managegrp_obj mo ON m.managegroup_id = mo.managegroup_id	
+					)mm ON o.obj_id = mm.obj_id
+				<if test="searchWord != ''">
+					WHERE 	
+						obj_name LIKE'%${searchWord}%'
+				</if>	
+				GROUP BY mm.obj_id						
+			</select>
+			
+			<!-- 인덱스 최대값 -->
+			<select id="findMaxIndex" resultType="int">
+				SELECT 
+					MAX(orderby_index) 
+				FROM 
+					managegrp_obj
+			</select>
+			
+			<!-- 관리 장비 그룹 추가 -->
+			<insert id="addGroupOfDevice" parameterType="HashMap">
+				INSERT INTO 
+					managegrp_obj (managegroup_id, obj_id,orderby_index)
+				VALUES
+					(#{managegroupId}, #{objId}, #{orderbyIndex});
+			</insert>
+			
+			<!-- 관리장비 그룹 삭제 -->
+			<delete id="delteGroupOfDevice" parameterType="HashMap">
+				DELETE FROM  
+					managegrp_obj 
+				WHERE 
+					managegroup_id=#{managegroupId} AND obj_id=#{objId}
+			</delete>
+
+</mapper>
