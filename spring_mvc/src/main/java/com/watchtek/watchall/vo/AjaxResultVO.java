@@ -27,19 +27,6 @@ public class AjaxResultVO
      */
     private String message;
     
-    private Object data2;
-    
-    public Object getData2()
-    {
-        return data2;
-    }
-
-    public void setData2(Object data2)
-    {
-        this.data2 = data2;
-    }
-    
-
     public AjaxResultVO(boolean success, Object data)
     {
         this.setSuccess(success);
@@ -56,9 +43,9 @@ public class AjaxResultVO
         this.success = success;
     }
     
-    public void setTotal(int total) 
+    public void setTotal(Object object) 
     {
-    	this.total = total;
+    	this.total = (Integer) object;
     }
 
     public Object getData()
