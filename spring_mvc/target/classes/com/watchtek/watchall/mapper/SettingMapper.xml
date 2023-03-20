@@ -54,12 +54,12 @@
 			<!-- 그룹 관리 장비 조회 -->
 			<select id="getGroupDevice" resultMap="GroupDeviceListlMap">
 				SELECT 
-					obj_name, objtype_name,managegroup_name, GROUP_CONCAT(managegroup_id SEPARATOR ',') AS managegroup_id, mm.obj_id
+					obj_name, objtype_name,managegroup_name, IFNULL(GROUP_CONCAT(managegroup_id SEPARATOR ','), 'null') AS managegroup_id, o.obj_id
 				FROM
 					obj o
 				INNER JOIN 	
 					objtype oj ON o.objtype_id = oj.objtype_id
-				INNER JOIN
+				LEFT JOIN
 					(
 					SELECT 
 						m.managegroup_id, managegroup_name , mo.obj_id
@@ -72,7 +72,7 @@
 					WHERE 	
 						obj_name LIKE'%${searchWord}%'
 				</if>	
-				GROUP BY mm.obj_id						
+				GROUP BY o.obj_id						
 			</select>
 			
 			<!-- 인덱스 최대값 -->

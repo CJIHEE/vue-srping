@@ -5,12 +5,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -50,38 +54,46 @@ public class EventService {
 	public List<Map<String, Object>> getTreeData() {
 		// 원본 데이터 받아오기
 		List<Map<String, Object>> originalList = mapper.getTreeData();
-		List<Map<String, Object>> changedList = new ArrayList<>();
-
-		// 내려줄 List에 입력할 트리의그룹 값 Map에 넣기
-		for (Map<String, Object> originalMap : originalList) {
+		// 내려줄 List에 입력할 트리의그룹 값 Map에 넣기 stream api 시작
+		List<Map<String, Object>> changedList = originalList.stream().map(originalMap -> {
 			Map<String, Object> changedMap = new HashMap<>();
 			changedMap.put("id", "group" + (int) ((double) originalMap.get("treeKey")));
 			changedMap.put("label", originalMap.get("label"));
 			changedMap.put("treeKey", "1." + (int) ((double) originalMap.get("treeKey")));
 
+			List<Object> originalChildrenId;
+			// child obj_id 있는지 확인
+			if (originalMap.containsKey("obj_id")) {
+				originalChildrenId = Arrays.asList(String.valueOf(originalMap.get("obj_id")).split(","));
+			} else {
+				originalChildrenId = Collections.emptyList();
+			}
+
 			// 변경된 List에 입력할 트리의 노드 값 List로 만들기 *시작
-			List<Map<String, Object>> newChildren = new ArrayList<>();
 			// 문자열을 리스트로
 			List<Object> originalChildren = Arrays.asList(String.valueOf(originalMap.get("Node")).split(","));
-			List<Object> originalChildrenId = Arrays.asList(String.valueOf(originalMap.get("obj_id")).split(","));
-			// 노드값 Map에 넣기
-			for (int i = 0; i < originalChildren.size(); i++) {
-				Map<String, Object> newChild = new HashMap<>();
-				// treekey로 obj_id 값 넣어주기(null 처리)
-				if (originalChildrenId.get(i) != "null") {
-					newChild.put("id", originalChildrenId.get(i));
-					newChild.put("label", originalChildren.get(i));
-					newChild.put("treeKey",
-							"1." + (int) ((double) originalMap.get("treeKey")) + "." + originalChildrenId.get(i));
-				}
-				// 노드 Map값 List로 만들기
-				newChildren.add(newChild);
+			//children list 만들기 
+			List<Map<String, Object>> newChildren = IntStream.range(0, originalChildren.size())
+					.filter(i -> !"null".equals(originalChildren.get(i))).mapToObj(i -> {
+						// 노드값 Map에 넣기
+						Map<String, Object> newChild = new HashMap<>();
+						newChild.put("id", originalChildrenId.get(i));
+						newChild.put("label", originalChildren.get(i));
+						newChild.put("treeKey", "1." + (int) ((double) originalMap.get("treeKey")) + "." + (i + 1));
+						return newChild;
+						// 노드 Map값 List로 만들기
+					}).collect(Collectors.toList());
+
+			if (!newChildren.isEmpty()) {
+				// 노드값List를 내려줄 List에 Map으로 넣어주기
+				changedMap.put("children", newChildren);
+				return changedMap;
+			} else {
+				return null;
 			}
-			// 노드값List를 내려줄 List에 Map으로 넣어주기
-			changedMap.put("children", newChildren);
-			// 위에서 넣어준 (그룹Map값)+(노드의 List형식의 Map값)을 최종 내려줄 List에 넣어주기
-			changedList.add(changedMap);
-		}
+			// 위에서 넣어준 (그룹Map값)+(노드의 List형식의 Map값)을 최종 내려줄 List로 만들기
+		}).filter(Objects::nonNull).collect(Collectors.toList());
+
 		return changedList;
 	}
 
@@ -135,7 +147,6 @@ public class EventService {
 
 		// 숫자인지 문자인지(장비 obj_id가 넘어왔는지 확인)
 		boolean isNumeric = ((CharSequence) paraMap.get("id")).chars().allMatch(Character::isDigit);
-		;
 		paraMap.put("isNumeric", isNumeric);
 		if (!isNumeric && !("root".equals(paraMap.get("id"))) && !("chartDetail".equals(paraMap.get("id")))) {
 			String intStr = getNumber(paraMap);
@@ -166,6 +177,11 @@ public class EventService {
 		if (!isNumeric && !("root".equals(paraMap.get("id")))) {
 			String intStr = String.valueOf(getNumber(paraMap));
 			paraMap.put("id", intStr);
+		}
+		
+		if ("" != paraMap.get("objNameList")) {
+			List<Object> objList = Arrays.asList(String.valueOf(paraMap.get("objNameList")).split(","));
+			paraMap.put("objList", objList);
 		}
 		return mapper.getEventList(paraMap);
 	}
@@ -308,5 +324,4 @@ public class EventService {
 		String intStr = id.replaceAll("[^\\d]", "");
 		return intStr;
 	}
-
 }
