@@ -10,17 +10,17 @@
 export default {
   name: 'CommonChart',
   props: {
-    id: { 
-      type: String, Number, 
-      required : true
+    id: {
+      type: String,
+      required: true,
     },
   },
   data() {
     return {
       chartTitle: '이벤트 이력',
       chartOptions: {
-        chart: {
-          zoomType: 'x',
+        chart: { 
+          zoomType: 'x' 
         },
         title: {
           text: '',

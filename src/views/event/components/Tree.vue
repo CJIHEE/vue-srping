@@ -9,6 +9,7 @@
       class="filter-tree"
       :data="data"
       :props="defaultProps"
+      :filter-node-method="filterNode"
       default-expand-all
       @node-click="handleNodeClick"
     />
@@ -31,7 +32,6 @@ export default {
         {
           id: 'root',
           label: 'ROOT',
-          treeKey: 1,
           children: [],
         },
       ],
@@ -42,10 +42,21 @@ export default {
       indexId: '',
     };
   },
+  watch :{
+    filterText(val) {
+        this.$refs.tree.filter(val);
+      }
+  },
   mounted() {
     this.fetchData();
   },
   methods: {
+    filterNode(value, data) {
+        if (value === '') {
+          return true;
+        }
+        return data.label?.indexOf(value) !== -1;
+    },
     fetchData() {
       EventApi.getTree()
         .then((response) => {
@@ -72,6 +83,7 @@ export default {
       this.$emit('submitTreeKey', data.id, data.label, data.treeKey);
       this.indexId = data.id;
     },
+
   },
 };
 </script>

@@ -50,7 +50,7 @@ export default {
       default: 'root',
     },
     drawer: {
-      type: [Boolean],
+      type: Boolean,
       required: true,
     },
   },

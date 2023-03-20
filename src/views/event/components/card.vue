@@ -10,10 +10,10 @@
         :span="4"
         shadow="always"
       >
-        <el-card 
-          shadow="always" 
-          class="card-style" 
-          :class="{ showColor: objNameList.includes(item.obj_define_name) === true }" 
+        <el-card
+          shadow="always"
+          class="card-style"
+          :class="{ showColor: objNameList.includes(item.obj_define_name) === true }"
           @click.native="getObjNameTable(item.obj_define_name, index)"
         >
           <p>{{ item.obj_define_name }}</p>
@@ -37,12 +37,12 @@ export default {
   name: 'CardCompo',
   props: {
     id: {
-      type:  String ,
+      type: String,
       required: true,
     },
     name: {
       type: String,
-      default : 'root'
+      default: 'root',
     },
   },
   data() {

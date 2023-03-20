@@ -266,37 +266,38 @@ export default {
     },
     //삭제
     deleteGrop() {
-      alert('그룹을 삭제하시겠습니까?');
-      //시퀀스 번호 배열에 담기
-      this.multipleSelection.forEach((multipleSelection) => {
-        this.array.push(multipleSelection.managegroupId);
-      });
-      //배열 중복제거
-      this.selectArray = this.array.filter((v, i) => this.array.indexOf(v) === i).join(',');
-      //배열보내기
-      const params = { selectArray: this.selectArray };
-      EventApi.deleteGroup(params)
-        .then((response) => {
-          if (response.data.success) {
-            this.$message({
-              showClose: true,
-              message: '그룹을 삭제하였습니다',
-              type: 'success',
-            });
-            this.getTableData();
-            this.resetData();
-          } else {
-            this.$message.error('오류가 발생하였습니다.');
-          }
-        })
-        .catch((ex) => {
-          console.log(ex);
+      if (confirm('그룹을 삭제하시겠습니까?') == true) {
+        //시퀀스 번호 배열에 담기
+        this.multipleSelection.forEach((multipleSelection) => {
+          this.array.push(multipleSelection.managegroupId);
         });
-      //배열초기화
-      this.array = [];
-      this.selectArray = [];
-      //데이터 초기화
-      this.resetData();
+        //배열 중복제거
+        this.selectArray = this.array.filter((v, i) => this.array.indexOf(v) === i).join(',');
+        //배열보내기
+        const params = { selectArray: this.selectArray };
+        EventApi.deleteGroup(params)
+          .then((response) => {
+            if (response.data.success) {
+              this.$message({
+                showClose: true,
+                message: '그룹을 삭제하였습니다',
+                type: 'success',
+              });
+              this.getTableData();
+              this.resetData();
+            } else {
+              this.$message.error('오류가 발생하였습니다.');
+            }
+          })
+          .catch((ex) => {
+            console.log(ex);
+          });
+        //배열초기화
+        this.array = [];
+        this.selectArray = [];
+        //데이터 초기화
+        this.resetData();
+      }
     },
     //유효성 검사
     checkRule(formName) {

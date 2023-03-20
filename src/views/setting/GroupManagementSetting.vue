@@ -38,8 +38,14 @@
             </el-button-group>
           </div>
           <div style="flex : 1.5; text-align: right;">
-            <el-button @click="changeGroup">저장</el-button>
-            <el-button @click="cancle"> 취소</el-button>
+            <el-button
+              :disabled="isDisabledSave"
+              @click="changeGroup"
+            >저장</el-button>
+            <el-button
+              :disabled="isDisabledCancle"
+              @click="cancle"
+            > 취소</el-button>
             <el-input
               v-model="searchWord"
               placeholder="검색"
@@ -59,6 +65,7 @@
             :data="groupDeviceTableData"
             border
             style="width: 90%; margin-top: 20px;"
+            height="500px"
             @selection-change="handleSelectionChange"
           >
             <el-table-column type="selection" />
@@ -104,6 +111,22 @@ export default {
       selectGroupId: '',
       managegroupId: '',
     };
+  },
+  computed: {
+    isDisabledSave() {
+      if (this.insertList.length !== 0 || this.deleteList.length !== 0) {
+        return false;
+      } else {
+        return true;
+      }
+    },
+    isDisabledCancle() {
+      if (this.insertList.length !== 0 || this.deleteList.length !== 0) {
+        return false;
+      } else {
+        return true;
+      }
+    },
   },
   watch: {
     //그룹테이블에서 선택한 그룹에 맞는 그룹장비 체크박스 자동 선택
@@ -179,16 +202,26 @@ export default {
     //체크박스 change
     handleSelectionChange(val) {
       this.multipleSelection = val;
+      //데이터 초기화
+      this.resetList();
+      //objId 추출
+      this.extractiedObjId();
+      //기존 checkList에서 제거 될때
+      this.deleteCheckList();
+      //기존 checkList에서 추가될때
+      this.addCheckList();
     },
     //그룹 선택시 해당 장비들 찾기
     findDevice(GroupId) {
       this.checkList = [];
       this.toggleSelection();
       this.groupDeviceTableData.forEach((groupDevice) => {
-        const manageGroupIdArray = groupDevice.managegroupId.split(',').map(Number); //장비가 속한 그룹 리스트
-        let checkDeviceInList = manageGroupIdArray.includes(Number(GroupId)); //그룹리스트에 해당 장비가 속해있는지 여부
-        if (checkDeviceInList) {
-          this.checkList.push(groupDevice); //체크 리스트에 담기
+        if (groupDevice.managegroupId !== 'null') {
+          const manageGroupIdArray = groupDevice.managegroupId.split(',').map(Number); //장비가 속한 그룹 리스트
+          let checkDeviceInList = manageGroupIdArray.includes(Number(GroupId)); //그룹리스트에 해당 장비가 속해있는지 여부
+          if (checkDeviceInList) {
+            this.checkList.push(groupDevice); //체크 리스트에 담기
+          }
         }
       });
       //체크박스 선택
@@ -200,14 +233,6 @@ export default {
     },
     //관리 그룹 변경
     changeGroup() {
-      //데이터 초기화
-      this.resetList();
-      //objId 추출
-      this.extractiedObjId();
-      //기존 checkList에서 제거 될때
-      this.deleteCheckList();
-      //기존 checkList에서 추가될때
-      this.addCheckList();
       this.editGroupOfDevice();
     },
     resetList() {
