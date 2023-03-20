@@ -318,7 +318,7 @@ export default {
         id: this.id,
         value: this.value,
         searchWord: this.searchWord,
-        objNameList: '',
+        objNameList: this.objNameList,
       };
       EventApi.getEventDetail(params)
         .then((response) => {
