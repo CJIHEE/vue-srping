@@ -49,7 +49,7 @@ public class EventService {
 	 *
 	 * @return
 	 * @author JIHEE
-	 * @create-date : 2023. 3. 14.
+	 * @create-date : 2023. 3. 20.
 	 */
 	public List<Map<String, Object>> getTreeData() {
 		// 원본 데이터 받아오기
@@ -107,7 +107,6 @@ public class EventService {
 	public List<Map<String, Object>> getCardData(Map<String, Object> paraMap) {
 		// 숫자인지 문자인지(장비 obj_id가 넘어왔는지 확인)
 		boolean isNumeric = ((CharSequence) paraMap.get("id")).chars().allMatch(Character::isDigit);
-		;
 		paraMap.put("isNumeric", isNumeric);
 		// 그룹 명일때만
 		if (!isNumeric && !("root".equals(paraMap.get("id")))) {

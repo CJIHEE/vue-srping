@@ -45,7 +45,7 @@ public class SettingController {
 			resultVO.setSuccess(true);
 		} catch (Exception e) {
 			resultVO.setSuccess(false);
-			LOGGER.error("[event] getGroupData : " + e.getMessage(), e);
+			LOGGER.error("[setting] getGroupData : " + e.getMessage(), e);
 		}
 		return resultVO;
 	}
@@ -66,7 +66,7 @@ public class SettingController {
 			resultVO.setSuccess(true);
 		} catch (Exception e) {
 			resultVO.setSuccess(false);
-			LOGGER.error("[event] addGroup : " + e.getMessage(), e);
+			LOGGER.error("[setting] addGroup : " + e.getMessage(), e);
 		}
 		return resultVO;
 	}
@@ -87,7 +87,7 @@ public class SettingController {
 			resultVO.setSuccess(true);
 		} catch (Exception e) {
 			resultVO.setSuccess(false);
-			LOGGER.error("[event] deleteGroup : " + e.getMessage(), e);
+			LOGGER.error("[setting] deleteGroup : " + e.getMessage(), e);
 		}
 		return resultVO;
 	}
@@ -108,7 +108,7 @@ public class SettingController {
 			resultVO.setSuccess(true);
 		} catch (Exception e) {
 			resultVO.setSuccess(false);
-			LOGGER.error("[event] modifyGroup : " + e.getMessage(), e);
+			LOGGER.error("[setting] modifyGroup : " + e.getMessage(), e);
 		}
 		return resultVO;
 	}
@@ -129,7 +129,7 @@ public class SettingController {
 			resultVO.setSuccess(true);
 		} catch (Exception e) {
 			resultVO.setSuccess(false);
-			LOGGER.error("[event] getGroupDevice : " + e.getMessage(), e);
+			LOGGER.error("[setting] getGroupDevice : " + e.getMessage(), e);
 		}
 		return resultVO;
 	}
@@ -150,7 +150,7 @@ public class SettingController {
 			resultVO.setSuccess(true);
 		} catch (Exception e) {
 			resultVO.setSuccess(false);
-			LOGGER.error("[event] editGroupOfDevice : " + e.getMessage(), e);
+			LOGGER.error("[setting] editGroupOfDevice : " + e.getMessage(), e);
 		}
 		return resultVO;
 	}
