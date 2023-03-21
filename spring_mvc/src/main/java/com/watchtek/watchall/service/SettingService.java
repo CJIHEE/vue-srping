@@ -106,7 +106,6 @@ public class SettingService {
 			List<Object> deleteList = Arrays.asList(String.valueOf(paraMap.get("deleteList")).split(","));
 			// 다중 delete
 			for (Object objId : deleteList) {
-				;
 				paraMap.put("objId", objId);
 				successCount += mapper.delteGroupOfDevice(paraMap);
 			}
