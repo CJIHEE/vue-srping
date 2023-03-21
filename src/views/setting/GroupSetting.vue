@@ -242,7 +242,6 @@ export default {
         const params = { managegroupName: this.ruleForm.groupName, orderbyIndex: this.orderIndex };
         EventApi.addGroup(params)
           .then((response) => {
-            console.log(response.data);
             if (response.data.success) {
               this.$message({
                 showClose: true,
@@ -316,7 +315,7 @@ export default {
       this.dialogFormVisible = false;
       this.modifyFormVisible = false;
     },
-    //데이터 초기화
+    //데이터 초기화 
     resetData() {
       this.ruleForm.groupName = '';
       this.groupNameList = [];
@@ -337,7 +336,6 @@ export default {
         const params = { managegroupName: this.ruleForm.groupName, orderbyIndex: this.modifyIndex };
         EventApi.modifyGroup(params)
           .then((response) => {
-            console.log(response.data);
             if (response.data.success) {
               this.$message({
                 showClose: true,
